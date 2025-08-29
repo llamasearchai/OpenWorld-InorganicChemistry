@@ -1,0 +1,27 @@
+target-version = "py311"
+line-length = 100
+fix = true
+
+select = [
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "W",  # pycodestyle warnings
+  "I",  # isort
+  "N",  # pep8-naming
+  "UP", # pyupgrade
+  "B",  # bugbear
+  "C4", # flake8-comprehensions
+  "T20",# flake8-print
+  "SIM",# flake8-simplify
+  "ARG",# flake8-unused-arguments
+  "PL", # pylint
+  "PIE",# flake8-pie
+  "PTH",# flake8-use-pathlib
+  "RUF" # ruff-specific
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+

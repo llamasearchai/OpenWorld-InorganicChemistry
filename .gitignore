@@ -1,0 +1,44 @@
+# General
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Editors/OS
+.DS_Store
+.idea/
+.vscode/
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Linters and caches
+.ruff_cache/
+.mypy_cache/
+
+# Environment
+.env
+.env.*
+
+# Logs and runtime
+*.log
+logs/
+
+# Project snapshots
+scipaper-cli-20*/
+
+# App data
+downloads/
+
