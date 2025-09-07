@@ -61,15 +61,15 @@ def load_run(run_id: str) -> Optional[RunRecord]:
     return RunRecord(id=row[0], kind=row[1], input=row[2], output=row[3], meta=json.loads(row[4]))
 
 
-def list_runs(kind: Optional[str] = None) -> List[RunRecord]:
+def list_runs(kind: Optional[str] = None, limit: int = 10) -> List[RunRecord]:
     conn = _connect()
     if kind:
         cur = conn.execute(
-            "SELECT id, kind, input, output, meta FROM runs WHERE kind = ? ORDER BY created_at DESC",
-            (kind,),
+            "SELECT id, kind, input, output, meta FROM runs WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
+            (kind, limit),
         )
     else:
-        cur = conn.execute("SELECT id, kind, input, output, meta FROM runs ORDER BY created_at DESC")
+        cur = conn.execute("SELECT id, kind, input, output, meta FROM runs ORDER BY created_at DESC LIMIT ?", (limit,))
     rows = cur.fetchall()
     conn.close()
     return [RunRecord(id=r[0], kind=r[1], input=r[2], output=r[3], meta=json.loads(r[4])) for r in rows]

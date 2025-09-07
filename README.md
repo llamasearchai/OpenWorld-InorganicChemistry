@@ -1,5 +1,7 @@
 ## OpenInorganicChemistry
 
+![OpenWorld-InorganicChemistry](OpenWorld-InorganicChemistry.png)
+
 Building better panels with fewer researchers. OpenInorganicChemistry is a macOS-compatible, Dockerizable Python research platform that automates solar materials workflows: literature review, synthesis planning, simulation, analysis, and reporting.
 
 - Author: Nik Jois
@@ -23,8 +25,9 @@ pip install -e ".[dev]"
 
 2) Configure OpenAI API key
 ```bash
-export OPENAI_API_KEY="sk-..."
-# or copy .env.example to .env and fill in
+# Set environment variable OPENAI_API_KEY
+# or copy .env.example to .env and set OPENAI_API_KEY there
+# macOS users can run: scripts/configure_api_key_macos.sh
 ```
 
 3) Run the CLI
@@ -49,10 +52,48 @@ Install Agents SDK extras if you plan to use the orchestration command:
 pip install .[agents]
 ```
 
+### CLI Reference
+```bash
+oic                     # interactive menu
+oic --help              # command help
+oic doctor              # environment check
+oic literature TOPIC
+oic synth FORMULA
+oic simulate TiO2 --backend emt --supercell 1
+oic analyze path/to/results.csv
+oic report RUN_ID
+oic search "perovskite stability" --provider auto --max-results 5
+oic codex "What affects perovskite stability?" --provider auto
+```
+
+### API Endpoints
+- GET /health
+- POST /agents/run {"text": "task"}
+- POST /literature {"text": "topic"}
+- POST /synthesis {"target": "formula"}
+- POST /simulation {"formula": "Ti", "backend": "emt", "supercell": 1}
+- POST /analysis {"path": "file.csv"}
+- POST /report {"run_id": "..."}
+- POST /search {"query": "...", "provider": "auto", "max_results": 5}
+- POST /codex {"question": "...", "provider": "auto", "max_results": 5}
+
+### Development
+```bash
+make deps
+make test
+make lint
+make type
+```
+
+### Docker
+```bash
+docker build -t openinorganicchemistry:latest .
+docker run --rm -it -e OPENAI_API_KEY -v "$PWD":/app openinorganicchemistry:latest oic
+```
+
 ### Security
 - Never commit secrets. Prefer env vars or macOS Keychain (keyring)
 
 ### License
 MIT
-
 

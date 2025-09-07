@@ -30,7 +30,8 @@ dependencies = [
   "pymatgen>=2024.5.1",
   "requests>=2.32.2",
   "fastapi>=0.112.0",
-  "uvicorn[standard]>=0.30.0"
+  "uvicorn[standard]>=0.30.0",
+  "redis>=5.0.0"
 ]
 
 [project.optional-dependencies]
@@ -55,6 +56,9 @@ oic = "openinorganicchemistry.cli:main"
 "coherent.test" = "tools.coherent_cli:test"
 "coherent.deps" = "tools.coherent_cli:deps"
 "coherent.cli" = "tools.coherent_cli:cli"
+
+[project.entry-points.oic.agents]
+custom = "openinorganicchemistry.agents:CustomAgent"
 
 [tool.hatch.build.targets.wheel]
 packages = ["openinorganicchemistry", "tools"]

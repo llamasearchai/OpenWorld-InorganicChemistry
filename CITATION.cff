@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use OpenInorganicChemistry in your work, please cite:"
+title: "OpenInorganicChemistry: AI-Enhanced Solar Materials Research Assistant"
+authors:
+  - family-names: Jois
+    given-names: Nik
+version: "1.1.0"
+date-released: "2025-09-07"
+license: MIT
+

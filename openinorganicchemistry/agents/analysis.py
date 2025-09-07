@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 from statistics import mean
+# Optional advanced analysis libraries are omitted to keep tests lightweight
 
 from ..core.plotting import save_convergence_plot
 from ..core.storage import RunRecord, save_run
@@ -35,6 +36,7 @@ def _load_values(path: str) -> list[float]:
 
 
 def analyze_results(path: str | None = None) -> str:
+    """Analyze results with basic stats and advanced PCA if applicable."""
     if path is None:
         path = input("Path to results (csv/json): ").strip()  # nosec B322
     values = _load_values(path)

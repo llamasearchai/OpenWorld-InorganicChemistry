@@ -60,6 +60,8 @@ def _extract_year(xml: str) -> Optional[int]:
     m = re.search(r"<published>(\d{4})-\d{2}-\d{2}", xml)
     return int(m.group(1)) if m else None
 
+# PubMed integration intentionally omitted to keep dependencies minimal for offline testing
+
 
 def search_crossref(query: str, max_results: int = 5) -> List[Paper]:
     url = "https://api.crossref.org/works"
