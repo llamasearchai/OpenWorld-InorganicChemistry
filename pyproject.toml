@@ -1,0 +1,100 @@
+[build-system]
+requires = ["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openinorganicchemistry"
+version = "1.0.0"
+description = "AI-Enhanced Solar Materials Research Assistant"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{ name = "Nik Jois" }]
+keywords = ["solar", "photovoltaics", "inorganic-chemistry", "agents", "OpenAI"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "openai>=1.40.0,<2",
+  "python-dotenv>=1.0.1",
+  "keyring>=24.3.1",
+  "typer[all]>=0.12.3",
+  "rich>=13.7.1",
+  "pydantic>=2.7.0",
+  "numpy>=1.26.4",
+  "pandas>=2.2.2",
+  "matplotlib>=3.8.4",
+  "ase>=3.22.1",
+  "pymatgen>=2024.5.1",
+  "requests>=2.32.2",
+  "fastapi>=0.112.0",
+  "uvicorn[standard]>=0.30.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.14.0",
+  "tox>=4.15.0",
+  "ruff>=0.4.8",
+  "black>=24.4.2",
+  "mypy>=1.10.0"
+]
+sgpt = ["shell-gpt>=0.12.0"]
+docs = ["mkdocs>=1.6.0","mkdocs-material>=9.5.0"]
+sim = ["scipy>=1.13.0","scikit-learn>=1.5.0"]
+agents = ["openai-agents>=0.2.9,<1.0.0"]
+
+[project.scripts]
+oic = "openinorganicchemistry.cli:main"
+"oic.api" = "openinorganicchemistry.api:run"
+"coherent.build" = "tools.coherent_cli:build"
+"coherent.test" = "tools.coherent_cli:test"
+"coherent.deps" = "tools.coherent_cli:deps"
+"coherent.cli" = "tools.coherent_cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["openinorganicchemistry", "tools"]
+
+[tool.pytest.ini_options]
+addopts = "-q --cov=openinorganicchemistry --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py39,py311,lint
+skipsdist = False
+
+[testenv]
+deps = .[dev]
+commands =
+    pytest
+
+[testenv:lint]
+deps = .[dev]
+commands =
+    ruff check .
+    black --check .
+    mypy openinorganicchemistry
+"""
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+

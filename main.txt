@@ -1,0 +1,1713 @@
+````bash
+#!/usr/bin/env bash
+# OpenInorganicChemistry: end-to-end bootstrap script
+# Creates a complete, macOS-compatible, Dockerizable Python repo with:
+# - OpenAI Agents SDK orchestration
+# - OpenAI Responses API (for direct LLM use)
+# - Secure API key handling (macOS Keychain via keyring, .env support)
+# - Typer/Rich CLI with a fully working interactive menu
+# - Shell-GPT (sgpt) command-line integration (optional)
+# - uv, tox, hatch, pytest wiring
+# - “coherent.*” helper commands (build/test/deps/cli) implemented locally
+# - CI via GitHub Actions (macOS + Linux)
+# - Dockerfile + devcontainer
+# Author: Nik Jois
+# License: MIT
+#
+# References (docs embedded as comments so you have them locally):
+# - OpenAI Python library (Responses API): https://pypi.org/project/openai/ ; https://platform.openai.com/docs/api-reference/responses
+# - OpenAI Agents SDK (Python): https://pypi.org/project/openai-agents/ ; https://openai.github.io/openai-agents-python/quickstart/  ; https://platform.openai.com/docs/guides/agents-sdk
+# - ShellGPT (sgpt): https://pypi.org/project/shell-gpt/
+#
+# Usage:
+#   bash bootstrap_openinorganicchemistry.sh
+# After running, activate the environment with uv or hatch or tox and run:
+#   oic            # launches the interactive menu
+#   oic --help     # CLI help
+
+set -euo pipefail
+
+REPO="OpenInorganicChemistry"
+PKG="openinorganicchemistry"
+YEAR="$(date +%Y)"
+AUTHOR="Nik Jois"
+DESCRIPTION="AI-Enhanced Solar Materials Research Assistant"
+PY_MIN="3.11"
+
+echo "==> Creating repository: ${REPO}"
+rm -rf "${REPO}"
+mkdir -p "${REPO}"
+cd "${REPO}"
+
+echo "==> Creating directory structure"
+mkdir -p \
+  .github/workflows \
+  .devcontainer \
+  scripts \
+  tools \
+  ${PKG}/agents \
+  ${PKG}/core \
+  ${PKG}/integrations \
+  tests
+
+echo "==> .gitignore"
+cat > .gitignore << 'EOF'
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.DS_Store
+.env
+.env.local
+.venv
+.uv
+.pytest_cache/
+.coverage
+dist/
+build/
+htmlcov/
+.site/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.cache/
+.eggs/
+*.egg-info/
+# ShellGPT config cache (if used)
+~/.config/shell_gpt/
+# VSCode / Devcontainer
+.vscode/
+.devcontainer/
+# Docker
+*.log
+EOF
+
+echo "==> LICENSE (MIT)"
+cat > LICENSE << EOF
+MIT License
+
+Copyright (c) ${YEAR} ${AUTHOR}
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+...
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+EOF
+
+echo "==> README.md"
+cat > README.md << 'EOF'
+# OpenInorganicChemistry
+
+**Building better panels with fewer researchers.**  
+OpenInorganicChemistry is a macOS-compatible, Dockerizable Python research platform that automates end-to-end solar materials workflows so lean teams can accomplish more. It augments scientists by taking care of repetitive work—literature review, synthesis planning, simulation orchestration, data analysis, and reporting—so people can focus on high-impact research and decisions.
+
+> Author: Nik Jois  
+> License: MIT
+
+## Highlights
+- OpenAI **Agents SDK** multi-agent orchestration for complete solar-materials workflows.
+- OpenAI **Responses API** for direct LLM reasoning, extraction, and summarization.
+- **CLI** (Typer + Rich) with an interactive menu and scripted subcommands.
+- Optional **Shell-GPT (sgpt)** integration from the CLI for quick terminal intelligence.
+- Secure **OpenAI API key** handling via environment, `.env`, or macOS Keychain (`keyring`).
+- **uv**, **tox**, **hatch**, **pytest** wired for fast local dev.
+- GitHub **CI** on macOS and Linux; **Docker** image for reproducible runs.
+- “**coherent**” helper commands (`coherent.build`, `coherent.test`, `coherent.deps`, `coherent.cli`) included as a local developer toolkit.
+
+## Quickstart
+
+### 1) Prerequisites
+- Python ≥ 3.11
+- macOS 12+ recommended (works on Linux too)
+- Optional: Homebrew, Docker, uv, hatch, tox, sgpt
+
+### 2) Install dependencies (recommended paths)
+Using uv:
+```bash
+uv venv && source .venv/bin/activate
+uv sync
+````
+
+Or with hatch:
+
+```bash
+hatch env create
+hatch run oic --help
+```
+
+Or plain pip:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+```
+
+### 3) Configure the OpenAI API key
+
+Set via environment:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+Or copy `.env.example` to `.env` and fill in the key:
+
+```bash
+cp .env.example .env
+```
+
+On macOS you can store it in Keychain:
+
+```bash
+scripts/configure_api_key_macos.sh
+```
+
+### 4) Run the CLI
+
+```bash
+oic
+```
+
+### 5) Run tests
+
+```bash
+tox           # or: hatch run test  /  uv run -m pytest -q
+```
+
+### 6) Docker
+
+```bash
+docker build -t openinorganicchemistry:latest .
+docker run --rm -it -e OPENAI_API_KEY -v "$PWD":/app openinorganicchemistry:latest oic
+```
+
+## Architecture Overview
+
+```
+openinorganicchemistry/
+├── agents/          # Multi-agent orchestration using OpenAI Agents SDK
+├── core/            # Chemistry utilities, DFT helpers, plotting, storage
+├── integrations/    # Shell-GPT integration, key management
+├── cli.py           # Typer-based CLI entrypoint (exposed as `oic`)
+└── ...
+```
+
+Agents:
+
+* Literature Agent – finds and summarizes current PV/inorganic research.
+* Synthesis Agent – proposes reproducible protocols and safety notes.
+* Simulation Agent – orchestrates ASE/pymatgen jobs; pluggable backends.
+* Analysis Agent – parses outputs, fits/stats, generates plots.
+* Reporting Agent – compiles results into markdown/LaTeX/PowerPoint-ready outputs.
+
+## Security Notes
+
+* API keys are read from environment first, then `.env`, then macOS Keychain via `keyring`.
+* Never hard-code secrets in code or commit `.env`.
+
+## Developer Tooling
+
+* **uv** for blazing-fast installs and venv management.
+* **tox** to standardize testing/lint across environments.
+* **hatch** for packaging and scripts.
+* Local **coherent** wrappers for streamlined DX:
+
+  * `coherent.deps` → installs/locks deps with uv or pip.
+  * `coherent.build` → sdist/wheel build and Docker build.
+  * `coherent.test` → pytest, coverage, tox, and basic smoke runs.
+  * `coherent.cli` → quick commands (doctor, fmt, lint, type, bench).
+
+## Documentation Pointers (comment links)
+
+* Agents SDK Quickstart: [https://openai.github.io/openai-agents-python/quickstart/](https://openai.github.io/openai-agents-python/quickstart/)
+* Agents SDK Docs: [https://platform.openai.com/docs/guides/agents-sdk](https://platform.openai.com/docs/guides/agents-sdk)
+* Responses API Reference: [https://platform.openai.com/docs/api-reference/responses](https://platform.openai.com/docs/api-reference/responses)
+* Shell-GPT project: [https://pypi.org/project/shell-gpt/](https://pypi.org/project/shell-gpt/)
+
+---
+
+EOF
+
+echo "==> .env.example"
+cat > .env.example << 'EOF'
+
+# OpenAI API key (preferred to set via environment or macOS Keychain)
+
+OPENAI\_API\_KEY=sk-...
+
+# Default model names (you can override via CLI flags)
+
+OIC\_MODEL\_GENERAL=gpt-4o
+OIC\_MODEL\_FAST=gpt-4o-mini
+
+# Optional: enable verbose tracing in development
+
+OIC\_VERBOSE=0
+EOF
+
+echo "==> pyproject.toml"
+cat > pyproject.toml << 'EOF'
+\[build-system]
+requires = \["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+\[project]
+name = "openinorganicchemistry"
+version = "1.0.0"
+description = "AI-Enhanced Solar Materials Research Assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = \[{ name = "Nik Jois" }]
+keywords = \["solar", "photovoltaics", "inorganic-chemistry", "agents", "OpenAI"]
+classifiers = \[
+"Programming Language :: Python :: 3",
+"License :: OSI Approved :: MIT License",
+"Operating System :: OS Independent",
+]
+dependencies = \[
+"openai>=1.40.0,<2",
+"openai-agents>=0.2.9,<1.0.0",
+"python-dotenv>=1.0.1",
+"keyring>=24.3.1",
+"typer\[all]>=0.12.3",
+"rich>=13.7.1",
+"pydantic>=2.7.0",
+"numpy>=1.26.4",
+"pandas>=2.2.2",
+"matplotlib>=3.8.4",
+"ase>=3.22.1",
+"pymatgen>=2024.5.1",
+"requests>=2.32.2",
+]
+
+\[project.optional-dependencies]
+dev = \[
+"pytest>=8.2.0",
+"pytest-cov>=5.0.0",
+"pytest-mock>=3.14.0",
+"tox>=4.15.0",
+"ruff>=0.4.8",
+"black>=24.4.2",
+"mypy>=1.10.0",
+]
+
+\[project.scripts]
+oic = "openinorganicchemistry.cli\:app"
+coherent.build = "tools.coherent\_cli\:build"
+coherent.test = "tools.coherent\_cli\:test"
+coherent.deps = "tools.coherent\_cli\:deps"
+coherent.cli = "tools.coherent\_cli\:cli"
+
+\[tool.hatch.build.targets.wheel]
+packages = \["openinorganicchemistry", "tools"]
+
+\[tool.pytest.ini\_options]
+addopts = "-q --cov=openinorganicchemistry --cov-report=term-missing"
+testpaths = \["tests"]
+
+\[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+\[tool.black]
+line-length = 100
+target-version = \["py311"]
+
+\[tool.tox]
+legacy\_tox\_ini = """
+\[tox]
+envlist = py311,lint
+skipsdist = False
+
+\[testenv]
+deps = .\[dev]
+commands =
+pytest
+
+\[testenv\:lint]
+deps = .\[dev]
+commands =
+ruff check .
+black --check .
+mypy openinorganicchemistry
+"""
+EOF
+
+echo "==> Dockerfile"
+cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1&#x20;
+PYTHONUNBUFFERED=1&#x20;
+PIP\_DISABLE\_PIP\_VERSION\_CHECK=1
+
+WORKDIR /app
+
+# System deps
+
+RUN apt-get update && apt-get install -y --no-install-recommends&#x20;
+build-essential git curl ca-certificates&#x20;
+&& rm -rf /var/lib/apt/lists/\*
+
+# Copy project
+
+COPY pyproject.toml README.md LICENSE ./
+COPY openinorganicchemistry ./openinorganicchemistry
+COPY tools ./tools
+COPY tests ./tests
+
+# Install
+
+RUN pip install --upgrade pip && pip install -e ".\[dev]"
+
+# Default command: CLI help
+
+ENTRYPOINT \["oic"]
+CMD \["--help"]
+EOF
+
+echo "==> .devcontainer/devcontainer.json"
+cat > .devcontainer/devcontainer.json << 'EOF'
+{
+"name": "OpenInorganicChemistry",
+"image": "mcr.microsoft.com/devcontainers/python:3.11",
+"features": {},
+"postCreateCommand": "pip install -e '.\[dev]'",
+"customizations": {
+"vscode": {
+"extensions": \[
+"ms-python.python",
+"charliermarsh.ruff",
+"ms-python.vscode-pylance",
+"ms-azuretools.vscode-docker"
+]
+}
+}
+}
+EOF
+
+echo "==> GitHub Actions CI workflow"
+cat > .github/workflows/ci.yml << 'EOF'
+name: CI
+
+on:
+push:
+pull\_request:
+
+jobs:
+test:
+name: tests (\${{ matrix.os }})
+runs-on: \${{ matrix.os }}
+strategy:
+fail-fast: false
+matrix:
+os: \[ubuntu-latest, macos-latest]
+steps:
+\- uses: actions/checkout\@v4
+\- uses: astral-sh/setup-uv\@v3
+\- name: Sync env
+run: |
+uv venv
+. .venv/bin/activate
+uv sync --all-extras
+\- name: Run tox
+run: |
+. .venv/bin/activate
+python -m tox -q
+EOF
+
+echo "==> scripts/configure\_api\_key\_macos.sh"
+cat > scripts/configure\_api\_key\_macos.sh << 'EOF'
+\#!/usr/bin/env bash
+set -euo pipefail
+KEY\_NAME="OPENAI\_API\_KEY"
+if ! command -v security >/dev/null 2>&1; then
+echo "macOS 'security' tool not found. Are you on macOS?"
+exit 1
+fi
+read -rsp "Enter your OpenAI API key (sk-...): " KEY
+echo
+
+# Store in login keychain, accessible to current user
+
+security add-generic-password -a "\$USER" -s "\$KEY\_NAME" -w "\$KEY" -U
+echo "Stored \$KEY\_NAME in macOS Keychain (service=\$KEY\_NAME, account=\$USER)."
+echo "You can retrieve it programmatically via the 'keyring' Python package."
+EOF
+chmod +x scripts/configure\_api\_key\_macos.sh
+
+echo "==> tools/coherent\_cli.py (developer UX helpers)"
+cat > tools/coherent\_cli.py << 'EOF'
+from **future** import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+from typing import Optional
+
+import typer
+
+app = typer.Typer(help="Coherent developer helpers: deps, build, test, cli")
+
+def \_run(cmd: list\[str], cwd: Optional\[str] = None) -> int:
+print("+", " ".join(cmd))
+return subprocess.call(cmd, cwd=cwd or os.getcwd())
+
+@app.command()
+def deps():
+"""
+Install project dependencies using uv if available, else pip.
+"""
+if shutil.which("uv"):
+\_run(\["uv", "venv"])
+if os.name == "posix":
+print("Activate with: source .venv/bin/activate")
+\_run(\["uv", "sync", "--all-extras"])
+else:
+print("uv not found; using pip")
+if not os.path.exists(".venv"):
+\_run(\[sys.executable, "-m", "venv", ".venv"])
+activate = os.path.join(".venv", "bin", "activate")
+print(f"Activate with: source {activate}")
+\_run(\[os.path.join(".venv", "bin", "python"), "-m", "pip", "install", "-e", ".\[dev]"])
+
+@app.command()
+def build(docker: bool = typer.Option(False, help="Build docker image as well")):
+"""
+Build wheel/sdist (and optionally Docker image).
+"""
+\_run(\[sys.executable, "-m", "pip", "install", "--upgrade", "build"])
+\_run(\[sys.executable, "-m", "build"])
+if docker:
+tag = "openinorganicchemistry\:latest"
+\_run(\["docker", "build", "-t", tag, "."])
+
+@app.command()
+def test():
+"""
+Run tox (pytests + linters).
+"""
+\_run(\[sys.executable, "-m", "tox", "-q"])
+
+@app.command()
+def cli(cmd: str = typer.Option("oic --help", help="Run a CLI command")):
+"""
+Quick runner for top-level CLI commands.
+"""
+shell = os.environ.get("SHELL", "/bin/bash")
+\_run(\[shell, "-lc", cmd])
+
+if **name** == "**main**":
+app()
+EOF
+
+echo "==> \${PKG}/**init**.py"
+cat > \${PKG}/**init**.py << 'EOF'
+**all** = \[]
+EOF
+
+echo "==> \${PKG}/cli.py (Typer + Rich interactive menu and subcommands)"
+cat > \${PKG}/cli.py << 'EOF'
+from **future** import annotations
+
+import asyncio
+import os
+import shutil
+import subprocess
+from typing import Optional
+
+import typer
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+from .core.settings import Settings
+from .agents.orchestration import run\_workflow, list\_agents
+from .agents.literature import literature\_query
+from .agents.synthesis import propose\_synthesis
+from .agents.simulation import run\_simulation
+from .agents.analysis import analyze\_results
+from .agents.reporting import generate\_report
+from .integrations.sgpt import run\_sgpt\_if\_available
+
+app = typer.Typer(add\_completion=False, help="OpenInorganicChemistry CLI")
+console = Console()
+
+def \_banner():
+console.print(Panel.fit(
+"\[bold]OpenInorganicChemistry\[/bold]\nAI-Enhanced Solar Research Platform\n",
+border\_style="cyan",
+))
+
+@app.command()
+def menu():
+"""
+Interactive menu for day-to-day work.
+"""
+\_banner()
+actions = {
+"1": ("Literature Review", literature\_query),
+"2": ("Propose Synthesis Pathways", propose\_synthesis),
+"3": ("Run Simulation", run\_simulation),
+"4": ("Analyze Results", analyze\_results),
+"5": ("Generate Report", generate\_report),
+"6": ("Run Agents Orchestration", lambda: asyncio.run(run\_workflow())),
+"7": ("Shell-GPT (if installed)", run\_sgpt\_if\_available),
+"8": ("Doctor (env check)", doctor),
+"9": ("Exit", lambda: None),
+}
+while True:
+table = Table(show\_header=True, header\_style="bold")
+table.add\_column("Option", style="cyan", width=6)
+table.add\_column("Action", style="white")
+for k, v in actions.items():
+table.add\_row(k, v\[0])
+console.print(table)
+choice = typer.prompt("Enter choice").strip()
+if choice == "9":
+break
+action = actions.get(choice)
+if action:
+try:
+action[1]()
+except Exception as e:
+console.print(f"\[red]Error:\[/red] {e}")
+else:
+console.print("\[red]Invalid option\[/red]")
+
+@app.command()
+def doctor():
+"""
+Check environment, versions, paths, and key setup.
+"""
+\_banner()
+s = Settings.load()
+rows = \[
+("Python", os.popen("python --version").read().strip()),
+("OpenAI key present", "yes" if s.openai\_api\_key\_masked else "no"),
+("Default LLM (general)", s.model\_general),
+("Default LLM (fast)", s.model\_fast),
+("sgpt available", "yes" if shutil.which("sgpt") else "no"),
+]
+table = Table(title="Environment")
+table.add\_column("Item", style="bold")
+table.add\_column("Value")
+for k, v in rows:
+table.add\_row(k, v)
+console.print(table)
+
+@app.command()
+def agents(input\_text: Optional\[str] = typer.Option(None, help="Optional prompt to route via agents")):
+"""
+Run the multi-agent orchestration flow.
+"""
+asyncio.run(run\_workflow(input\_text))
+
+@app.command()
+def literature(topic: str = typer.Argument(..., help="Topic to review, e.g., perovskite stability")):
+literature\_query(topic)
+
+@app.command()
+def synth(target: str = typer.Argument(..., help="Target material formula, e.g., CH3NH3PbI3")):
+propose\_synthesis(target)
+
+@app.command()
+def simulate(formula: str = typer.Argument(..., help="Material formula, e.g., TiO2"),
+backend: str = typer.Option("emt", help="Backend: emt|ase|external"),
+supercell: int = typer.Option(1, help="Supercell size (int)")):
+run\_simulation(formula, backend=backend, supercell=supercell)
+
+@app.command()
+def analyze(path: str = typer.Argument(..., help="Path to results (csv/json)")):
+analyze\_results(path)
+
+@app.command()
+def report(run\_id: str = typer.Argument(..., help="Run identifier to compile report for")):
+generate\_report(run\_id)
+
+@app.command()
+def sgpt(prompt: str = typer.Argument(..., help="Prompt to send to shell-gpt"),
+shell: bool = typer.Option(False, "--shell", "-s", help="Use sgpt in shell mode")):
+"""
+Proxy into shell-gpt (if installed).
+"""
+run\_sgpt\_if\_available(prompt=prompt, shell=shell)
+
+def main():
+\# Default command is menu
+menu()
+
+if **name** == "**main**":
+main()
+EOF
+
+echo "==> \${PKG}/core/settings.py (secure key handling: env, .env, macOS Keychain via keyring)"
+cat > \${PKG}/core/settings.py << 'EOF'
+from **future** import annotations
+
+import os
+from dataclasses import dataclass
+from typing import Optional
+
+from dotenv import load\_dotenv
+
+try:
+import keyring  # type: ignore
+except Exception:  # pragma: no cover
+keyring = None  # type: ignore
+
+# Load .env if present
+
+load\_dotenv(override=False)
+
+KEYCHAIN\_SERVICE = "OPENAI\_API\_KEY"
+
+@dataclass
+class Settings:
+openai\_api\_key: Optional\[str]
+model\_general: str = os.environ.get("OIC\_MODEL\_GENERAL", "gpt-4o")
+model\_fast: str = os.environ.get("OIC\_MODEL\_FAST", "gpt-4o-mini")
+verbose: bool = bool(int(os.environ.get("OIC\_VERBOSE", "0")))
+
+```
+@property
+def openai_api_key_masked(self) -> str:
+    if not self.openai_api_key:
+        return ""
+    return self.openai_api_key[:6] + "..." + self.openai_api_key[-4:]
+
+@staticmethod
+def _from_env() -> Optional[str]:
+    key = os.environ.get("OPENAI_API_KEY")
+    if key and key.strip():
+        return key.strip()
+    return None
+
+@staticmethod
+def _from_keychain() -> Optional[str]:
+    if keyring is None:
+        return None
+    try:
+        return keyring.get_password(KEYCHAIN_SERVICE, os.environ.get("USER") or "default")
+    except Exception:
+        return None
+
+@classmethod
+def load(cls) -> "Settings":
+    # Precedence: ENV -> macOS Keychain -> None
+    key_env = cls._from_env()
+    if key_env:
+        return cls(openai_api_key=key_env)
+    key_chain = cls._from_keychain()
+    return cls(openai_api_key=key_chain)
+```
+
+EOF
+
+echo "==> \${PKG}/core/chemistry.py"
+cat > \${PKG}/core/chemistry.py << 'EOF'
+from **future** import annotations
+
+from dataclasses import dataclass
+
+@dataclass
+class MaterialSpec:
+formula: str
+notes: str = ""
+
+# Extend with domain utilities, parsers, empirical rules, etc.
+
+EOF
+
+echo "==> \${PKG}/core/dft\_utils.py"
+cat > \${PKG}/core/dft\_utils.py << 'EOF'
+from **future** import annotations
+
+import warnings
+from typing import Optional
+
+import numpy as np
+from ase import Atoms
+from ase.build import bulk
+from ase.calculators.emt import EMT
+
+def build\_bulk(formula: str, supercell: int = 1) -> Atoms:
+atoms = bulk(formula, cubic=True)
+if supercell > 1:
+atoms = atoms \* (supercell, supercell, supercell)
+return atoms
+
+def quick\_emt\_energy(formula: str, supercell: int = 1) -> float:
+atoms = build\_bulk(formula, supercell)
+atoms.calc = EMT()
+with warnings.catch\_warnings():
+warnings.simplefilter("ignore")
+e = float(atoms.get\_potential\_energy())
+return e
+
+def density\_estimate(atoms: Atoms) -> float:
+\# crude density estimate
+volume = atoms.get\_volume()
+mass = np.sum(atoms.get\_masses())
+return mass / max(volume, 1e-9)
+EOF
+
+echo "==> \${PKG}/core/plotting.py"
+cat > \${PKG}/core/plotting.py << 'EOF'
+from **future** import annotations
+
+import matplotlib.pyplot as plt
+
+def save\_convergence\_plot(values: list\[float], path: str = "convergence.png") -> str:
+plt.figure()
+plt.plot(list(range(1, len(values) + 1)), values, marker="o")
+plt.xlabel("Step")
+plt.ylabel("Energy (a.u.)")
+plt.title("Convergence")
+plt.tight\_layout()
+plt.savefig(path)
+return path
+EOF
+
+echo "==> \${PKG}/core/storage.py (SQLite run tracking)"
+cat > \${PKG}/core/storage.py << 'EOF'
+from **future** import annotations
+
+import json
+import os
+import sqlite3
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+DB\_PATH = os.environ.get("OIC\_DB", "oic\_runs.sqlite3")
+
+DDL = """
+CREATE TABLE IF NOT EXISTS runs (
+id TEXT PRIMARY KEY,
+kind TEXT NOT NULL,
+input TEXT,
+output TEXT,
+meta TEXT,
+created\_at TIMESTAMP DEFAULT CURRENT\_TIMESTAMP
+)
+"""
+
+@dataclass
+class RunRecord:
+id: str
+kind: str
+input: str
+output: str
+meta: dict
+
+def \_connect() -> sqlite3.Connection:
+conn = sqlite3.connect(DB\_PATH)
+conn.execute(DDL)
+return conn
+
+def save\_run(record: RunRecord) -> None:
+conn = \_connect()
+with conn:
+conn.execute(
+"INSERT OR REPLACE INTO runs (id, kind, input, output, meta) VALUES (?, ?, ?, ?, ?)",
+(
+record.id,
+record.kind,
+record.input,
+record.output,
+json.dumps(record.meta, ensure\_ascii=False),
+),
+)
+conn.close()
+
+def load\_run(run\_id: str) -> Optional\[RunRecord]:
+conn = \_connect()
+cur = conn.execute("SELECT id, kind, input, output, meta FROM runs WHERE id = ?", (run\_id,))
+row = cur.fetchone()
+conn.close()
+if not row:
+return None
+return RunRecord(id=row\[0], kind=row\[1], input=row\[2], output=row\[3], meta=json.loads(row\[4]))
+
+def list\_runs(kind: Optional\[str] = None) -> List\[RunRecord]:
+conn = \_connect()
+if kind:
+cur = conn.execute("SELECT id, kind, input, output, meta FROM runs WHERE kind = ? ORDER BY created\_at DESC", (kind,))
+else:
+cur = conn.execute("SELECT id, kind, input, output, meta FROM runs ORDER BY created\_at DESC")
+rows = cur.fetchall()
+conn.close()
+return \[RunRecord(id=r\[0], kind=r\[1], input=r\[2], output=r\[3], meta=json.loads(r\[4])) for r in rows]
+EOF
+
+echo "==> \${PKG}/agents/orchestration.py (OpenAI Agents SDK multi-agent routing)"
+cat > \${PKG}/agents/orchestration.py << 'EOF'
+from **future** import annotations
+
+import asyncio
+import uuid
+from typing import Optional
+
+from agents import Agent, Runner  # OpenAI Agents SDK
+
+# Agents SDK docs: [https://openai.github.io/openai-agents-python/quickstart/](https://openai.github.io/openai-agents-python/quickstart/)
+
+from ..core.storage import RunRecord, save\_run
+from .prompts import LIT\_PROMPT, SYNTH\_PROMPT, SIM\_PROMPT, ANALYSIS\_PROMPT, REPORT\_PROMPT
+
+def list\_agents() -> list\[str]:
+return \["literature", "synthesis", "simulation", "analysis", "reporting"]
+
+# Define role agents with instructions
+
+literature\_agent = Agent(
+name="Literature Agent",
+handoff\_description="Finds and summarizes inorganic PV literature with key parameters.",
+instructions=LIT\_PROMPT,
+)
+
+synthesis\_agent = Agent(
+name="Synthesis Agent",
+handoff\_description="Proposes reproducible synthesis protocols and safety notes.",
+instructions=SYNTH\_PROMPT,
+)
+
+simulation\_agent = Agent(
+name="Simulation Agent",
+handoff\_description="Plans and explains simulation strategies (ASE/pymatgen/DFT backends).",
+instructions=SIM\_PROMPT,
+)
+
+analysis\_agent = Agent(
+name="Analysis Agent",
+handoff\_description="Parses outputs, extracts metrics, and proposes follow-up experiments.",
+instructions=ANALYSIS\_PROMPT,
+)
+
+reporting\_agent = Agent(
+name="Reporting Agent",
+handoff\_description="Compiles results into clean reports (markdown/LaTeX).",
+instructions=REPORT\_PROMPT,
+)
+
+# Triage agent determines which agent to invoke based on user input
+
+triage\_agent = Agent(
+name="Triage Agent",
+instructions="Route the user's solar research task to one of the specialist agents.",
+handoffs=\[literature\_agent, synthesis\_agent, simulation\_agent, analysis\_agent, reporting\_agent],
+)
+
+async def run\_workflow(input\_text: Optional\[str] = None):
+"""Orchestrate via triage to specialist agents."""
+if input\_text is None:
+input\_text = input("Enter research task (e.g., 'Summarize perovskite stability'): ").strip()  # nosec B322
+result = await Runner.run(triage\_agent, input\_text)
+output\_text = result.final\_output
+run\_id = str(uuid.uuid4())
+save\_run(RunRecord(id=run\_id, kind="agents", input=input\_text, output=output\_text, meta={"agent": "triage"}))
+print("\n=== AGENT RESULT ===\n")
+print(output\_text)
+print(f"\n\[run\_id] {run\_id}")
+return run\_id
+
+# For synchronous CLI usage:
+
+def run\_workflow\_sync(input\_text: Optional\[str] = None) -> str:
+return asyncio.get\_event\_loop().run\_until\_complete(run\_workflow(input\_text))
+EOF
+
+echo "==> \${PKG}/agents/prompts.py"
+cat > \${PKG}/agents/prompts.py << 'EOF'
+LIT\_PROMPT = """You are a literature analysis specialist for inorganic photovoltaics.
+
+* Search and summarize recent findings (focus: inorganic perovskites, CIGS, CdTe, TiO2).
+* Extract quantitative parameters: band gaps, stability metrics, deposition methods, device architectures.
+* Present a bullet summary and a short 'what to try next' section.
+  """
+
+SYNTH\_PROMPT = """You design reproducible inorganic synthesis protocols with safety.
+
+* Provide solvent choices, precursors, temperatures, atmospheres, annealing.
+* Flag hazardous steps and provide safer alternatives when possible.
+* Output: numbered steps, materials list, notes on reproducibility and scale-up.
+  """
+
+SIM\_PROMPT = """You plan computational studies for PV materials.
+
+* Suggest ASE/pymatgen workflows, k-point mesh, energy cutoffs, and convergence criteria.
+* Consider high-throughput screening strategies; note which properties to extract.
+* Output: stepwise recipe and why each step matters.
+  """
+
+ANALYSIS\_PROMPT = """You analyze experimental or simulated outputs for PV.
+
+* Identify trends, compute means/CI, point out outliers, and propose follow ups.
+* Output: concise narrative + list of prioritized next experiments.
+  """
+
+REPORT\_PROMPT = """You compile a clean report for stakeholders.
+
+* Produce a well-structured summary with sections: Objective, Methods, Results, Next Steps.
+* Format as markdown with tables where helpful. Keep it executive-readable.
+  """
+  EOF
+
+echo "==> \${PKG}/agents/literature.py (Responses API usage)"
+cat > \${PKG}/agents/literature.py << 'EOF'
+from **future** import annotations
+
+import uuid
+
+from openai import OpenAI  # Responses API
+from ..core.settings import Settings
+from ..core.storage import RunRecord, save\_run
+
+def literature\_query(topic: str | None = None):
+if topic is None:
+topic = input("Enter research topic (e.g., 'perovskite stability'): ").strip()  # nosec B322
+s = Settings.load()
+if not s.openai\_api\_key:
+raise RuntimeError("OpenAI API key not configured. See README for setup.")
+client = OpenAI(api\_key=s.openai\_api\_key)
+prompt = (
+f"Summarize recent inorganic/PV literature about: {topic}. "
+"Extract band gaps, stability info, synthesis methods, and key results. "
+"Return a concise bullet summary."
+)
+resp = client.responses.create(model=s.model\_general, input=prompt)
+output = resp.output\_text
+print("\n=== Literature Summary ===\n")
+print(output)
+run\_id = str(uuid.uuid4())
+save\_run(RunRecord(id=run\_id, kind="literature", input=topic, output=output, meta={"model": s.model\_general}))
+print(f"\n\[run\_id] {run\_id}")
+return run\_id
+EOF
+
+echo "==> \${PKG}/agents/synthesis.py"
+cat > \${PKG}/agents/synthesis.py << 'EOF'
+from **future** import annotations
+
+import uuid
+from openai import OpenAI
+
+from ..core.settings import Settings
+from ..core.storage import RunRecord, save\_run
+
+def propose\_synthesis(target: str | None = None):
+if target is None:
+target = input("Target material (e.g., CH3NH3PbI3): ").strip()  # nosec B322
+s = Settings.load()
+if not s.openai\_api\_key:
+raise RuntimeError("OpenAI API key not configured. See README for setup.")
+client = OpenAI(api\_key=s.openai\_api\_key)
+prompt = (
+f"Propose a reproducible inorganic synthesis route for {target}. "
+"Include solvents, precursors, temperatures, atmospheres, annealing, "
+"and safety notes with alternatives when hazardous."
+)
+resp = client.responses.create(model=s.model\_general, input=prompt)
+output = resp.output\_text
+print("\n=== Suggested Synthesis Pathway ===\n")
+print(output)
+run\_id = str(uuid.uuid4())
+save\_run(RunRecord(id=run\_id, kind="synthesis", input=target, output=output, meta={"model": s.model\_general}))
+print(f"\n\[run\_id] {run\_id}")
+return run\_id
+EOF
+
+echo "==> \${PKG}/agents/simulation.py"
+cat > \${PKG}/agents/simulation.py << 'EOF'
+from **future** import annotations
+
+import uuid
+from typing import Literal
+
+from ..core.dft\_utils import quick\_emt\_energy
+from ..core.storage import RunRecord, save\_run
+
+def run\_simulation(formula: str | None = None, backend: Literal\["emt","ase","external"] = "emt", supercell: int = 1):
+if formula is None:
+formula = input("Material formula (e.g., TiO2): ").strip()  # nosec B322
+if backend != "emt":
+print("Note: demo uses EMT backend; extend to ASE/DFT as installed.")
+energy = quick\_emt\_energy(formula, supercell=supercell)
+output = f"EMT potential energy for {formula} (supercell={supercell}): {energy:.6f} a.u."
+print("\n=== Simulation Result ===\n")
+print(output)
+run\_id = str(uuid.uuid4())
+save\_run(RunRecord(id=run\_id, kind="simulation", input=formula, output=output, meta={"backend": backend, "supercell": supercell}))
+print(f"\n\[run\_id] {run\_id}")
+return run\_id
+EOF
+
+echo "==> \${PKG}/agents/analysis.py"
+cat > \${PKG}/agents/analysis.py << 'EOF'
+from **future** import annotations
+
+import json
+import os
+import uuid
+from statistics import mean
+from typing import Any
+
+from ..core.plotting import save\_convergence\_plot
+from ..core.storage import RunRecord, save\_run
+
+def \_load\_values(path: str) -> list\[float]:
+if not os.path.exists(path):
+raise FileNotFoundError(path)
+if path.endswith(".json"):
+data: Any = json.loads(open(path, "r", encoding="utf-8").read())
+if isinstance(data, dict) and "values" in data:
+return \[float(v) for v in data\["values"]]
+if isinstance(data, list):
+return \[float(v) for v in data]
+raise ValueError("JSON must be a list or dict with 'values'")
+\# Fallback: CSV with a column of numbers
+values: list\[float] = \[]
+with open(path, "r", encoding="utf-8") as f:
+for line in f:
+line = line.strip().split(",")\[0]
+if line:
+try:
+values.append(float(line))
+except Exception:
+pass
+if not values:
+raise ValueError("No numeric values parsed")
+return values
+
+def analyze\_results(path: str | None = None):
+if path is None:
+path = input("Path to results (csv/json): ").strip()  # nosec B322
+values = \_load\_values(path)
+avg = mean(values)
+plot\_path = save\_convergence\_plot(values, "convergence.png")
+output = f"Count={len(values)}, Mean={avg:.6f}, Plot={plot\_path}"
+print("\n=== Analysis Summary ===\n")
+print(output)
+run\_id = str(uuid.uuid4())
+save\_run(RunRecord(id=run\_id, kind="analysis", input=path, output=output, meta={"n\_values": len(values)}))
+print(f"\n\[run\_id] {run\_id}")
+return run\_id
+EOF
+
+echo "==> \${PKG}/agents/reporting.py"
+cat > \${PKG}/agents/reporting.py << 'EOF'
+from **future** import annotations
+
+import os
+import uuid
+from datetime import datetime
+
+from ..core.storage import RunRecord, save\_run
+
+TEMPLATE = """# Research Summary
+
+## Objective
+
+{objective}
+
+## Methods
+
+{methods}
+
+## Results
+
+{results}
+
+## Next Steps
+
+{next\_steps}
+
+Generated on: {timestamp}
+"""
+
+def generate\_report(run\_id: str | None = None):
+if run\_id is None:
+run\_id = input("Enter run\_id to compile: ").strip()  # nosec B322
+\# In a real pipeline, we would aggregate prior run records by tag/job id.
+\# For this demo, produce a stubbed report that can be extended.
+report\_text = TEMPLATE.format(
+objective="Automate inorganic PV screening for efficiency and stability.",
+methods="Agents SDK orchestration; ASE/EMT initial energy estimates; literature and synthesis planning via LLM.",
+results=f"Compiled outputs associated with run {run\_id} (see DB records).",
+next\_steps="Integrate production DFT backends and lab data import; add statistical models.",
+timestamp=datetime.utcnow().isoformat() + "Z",
+)
+out\_dir = "reports"
+os.makedirs(out\_dir, exist\_ok=True)
+path = os.path.join(out\_dir, f"report\_{run\_id}.md")
+with open(path, "w", encoding="utf-8") as f:
+f.write(report\_text)
+print("\n=== Report Generated ===\n")
+print(path)
+save\_run(RunRecord(id=str(uuid.uuid4()), kind="report", input=run\_id, output=path, meta={}))
+return path
+EOF
+
+echo "==> \${PKG}/integrations/sgpt.py (Shell-GPT integration)"
+cat > \${PKG}/integrations/sgpt.py << 'EOF'
+from **future** import annotations
+
+import shutil
+import subprocess
+from typing import Optional
+
+def run\_sgpt\_if\_available(prompt: Optional\[str] = None, shell: bool = False):
+"""
+Invoke shell-gpt (sgpt) if present on PATH.
+"""
+if not shutil.which("sgpt"):
+print("shell-gpt (sgpt) not installed. Install via: pip install shell-gpt")
+return
+args = \["sgpt"]
+if shell:
+args.append("--shell")
+if prompt is None:
+prompt = input("sgpt prompt: ").strip()  # nosec B322
+args.append(prompt)
+print("+", " ".join(args))
+subprocess.call(args)
+EOF
+
+echo "==> tests/test\_cli.py"
+cat > tests/test\_cli.py << 'EOF'
+from **future** import annotations
+import subprocess
+import sys
+
+def test\_cli\_help():
+out = subprocess.check\_output(\[sys.executable, "-m", "openinorganicchemistry.cli", "--help"])
+assert b"OpenInorganicChemistry CLI" in out
+EOF
+
+echo "==> tests/test\_settings.py"
+cat > tests/test\_settings.py << 'EOF'
+from **future** import annotations
+import os
+from openinorganicchemistry.core.settings import Settings
+
+def test\_settings\_env\_override(monkeypatch):
+monkeypatch.setenv("OPENAI\_API\_KEY", "sk-TESTKEY")
+s = Settings.load()
+assert s.openai\_api\_key and s.openai\_api\_key.startswith("sk-")
+EOF
+
+echo "==> tests/test\_agents\_mock.py (mock OpenAI calls for offline testing)"
+cat > tests/test\_agents\_mock.py << 'EOF'
+from **future** import annotations
+
+import builtins
+from openinorganicchemistry.agents.literature import literature\_query
+
+class DummyResp:
+output\_text = "mocked output"
+
+class DummyClient:
+class responses:
+@staticmethod
+def create(model: str, input: str):
+return DummyResp()
+
+def test\_literature\_mock(monkeypatch):
+\# avoid input() in tests
+monkeypatch.setattr(builtins, "input", lambda \_: "perovskite stability")
+\# inject dummy client
+import openinorganicchemistry.agents.literature as mod
+monkeypatch.setattr(mod, "OpenAI", lambda api\_key=None: DummyClient())
+\# ensure settings returns a key
+from openinorganicchemistry.core.settings import Settings
+monkeypatch.setenv("OPENAI\_API\_KEY", "sk-TEST")
+run\_id = literature\_query()
+assert isinstance(run\_id, str)
+EOF
+
+echo "==> Makefile (optional shortcuts)"
+cat > Makefile << 'EOF'
+.PHONY: deps test lint fmt type build docker run
+
+deps:
+@python -m pip install --upgrade pip
+@pip install -e ".\[dev]"
+
+test:
+@python -m tox -q
+
+lint:
+@ruff check .
+
+fmt:
+@black .
+
+type:
+@mypy openinorganicchemistry
+
+build:
+@python -m build
+
+docker:
+@docker build -t openinorganicchemistry\:latest .
+
+run:
+@oic
+EOF
+
+echo "==> SECURITY.md"
+cat > SECURITY.md << 'EOF'
+
+# Security Policy
+
+* Do not commit credentials or API keys.
+* Prefer environment variables or macOS Keychain (`keyring`) for secret storage.
+* Review Docker build args to avoid leaking secrets in layers.
+* Keep dependencies updated and pin ranges in `pyproject.toml`.
+  EOF
+
+echo "==> CODEOWNERS"
+cat > CODEOWNERS << 'EOF'
+
+* @nikjois
+  EOF
+
+echo "==> Formatting bootstrap complete."
+
+echo
+echo "Next steps:"
+echo "  1) Create a virtualenv and install deps (choose one):"
+echo "     - uv:    uv venv && source .venv/bin/activate && uv sync --all-extras"
+echo "     - hatch: hatch env create"
+echo "     - pip:   python -m venv .venv && source .venv/bin/activate && pip install -e '.\[dev]'"
+echo "  2) Set OPENAI\_API\_KEY via env, .env, or scripts/configure\_api\_key\_macos.sh"
+echo "  3) Run the CLI:  oic"
+echo "  4) Run tests:    tox"
+
+```
+::contentReference[oaicite:0]{index=0}
+```
+```bash
+#!/usr/bin/env bash
+# Continuation bootstrap: deepen OpenInorganicChemistry with docs, arXiv/Crossref, tests,
+# sgpt extras, improved Agents SDK orchestration, and make `oic` launch the menu by default.
+# Run this from the repository root created by the previous script.
+
+set -euo pipefail
+
+REPO="OpenInorganicChemistry"
+PKG="openinorganicchemistry"
+
+if [ ! -d ".git" ] && [ -d "${REPO}" ]; then
+  cd "${REPO}"
+fi
+
+if [ ! -d "${PKG}" ]; then
+  echo "This script must be run from the repo root that contains ${PKG}/"
+  exit 1
+fi
+
+echo "==> Update pyproject to make 'oic' run the interactive menu by default and add optional extras"
+# Replace the oic entry point and add optional extras for sgpt/docs/sim; add mypy config.
+python - <<'PY'
+import io, re, sys
+p = "pyproject.toml"
+s = open(p, "r", encoding="utf-8").read()
+
+# 1) point oic to main() instead of Typer app object
+s = re.sub(r'oic\s*=\s*"openinorganicchemistry\.cli:app"', 'oic = "openinorganicchemistry.cli:main"', s)
+
+# 2) add optional extras for shell-gpt and docs and sim-utils if not present
+if "[project.optional-dependencies]" in s and "sgpt" not in s:
+    s = s.replace("[project.optional-dependencies]", """[project.optional-dependencies]
+sgpt = ["shell-gpt>=0.12.0"]
+docs = ["mkdocs>=1.6.0","mkdocs-material>=9.5.0"]
+sim = ["scipy>=1.13.0","scikit-learn>=1.5.0"]
+""")
+# 3) mypy tool config
+if "[tool.mypy]" not in s:
+    s += """
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+"""
+
+open(p, "w", encoding="utf-8").write(s)
+print("pyproject.toml updated")
+PY
+
+echo "==> Add arXiv and Crossref lightweight integrations used by Literature agent"
+mkdir -p ${PKG}/integrations
+
+cat > ${PKG}/integrations/lit_sources.py << 'EOF'
+from __future__ import annotations
+
+import re
+import time
+from dataclasses import dataclass
+from typing import Iterable, List, Optional
+import requests
+
+USER_AGENT = "OpenInorganicChemistry/1.0 (+https://example.org)"
+
+@dataclass
+class Paper:
+    title: str
+    authors: list[str]
+    year: Optional[int]
+    url: str
+    source: str
+
+def search_arxiv(query: str, max_results: int = 5) -> List[Paper]:
+    # Minimal arXiv API query
+    url = "http://export.arxiv.org/api/query"
+    params = {
+        "search_query": query,
+        "start": 0,
+        "max_results": max_results,
+        "sortBy": "lastUpdatedDate",
+        "sortOrder": "descending",
+    }
+    headers = {"User-Agent": USER_AGENT}
+    r = requests.get(url, params=params, headers=headers, timeout=20)
+    r.raise_for_status()
+    # Very light parse (Atom XML). We only extract a few fields to keep deps minimal.
+    text = r.text
+    entries = text.split("<entry>")
+    out: List[Paper] = []
+    for e in entries[1:]:
+        title = _extract(e, "title")
+        link = _extract_link(e)
+        authors = _extract_authors(e)
+        year = _extract_year(e)
+        out.append(Paper(title=title.strip(), authors=authors, year=year, url=link, source="arXiv"))
+    return out
+
+def _extract(xml: str, tag: str) -> str:
+    m = re.search(rf"<{tag}[^>]*>(.*?)</{tag}>", xml, flags=re.S)
+    return (m.group(1) if m else "").strip()
+
+def _extract_link(xml: str) -> str:
+    m = re.search(r'<link[^>]+href="([^"]+)"', xml)
+    return m.group(1) if m else ""
+
+def _extract_authors(xml: str) -> list[str]:
+    return re.findall(r"<name>(.*?)</name>", xml)
+
+def _extract_year(xml: str) -> Optional[int]:
+    m = re.search(r"<published>(\d{4})-\d{2}-\d{2}", xml)
+    return int(m.group(1)) if m else None
+
+def search_crossref(query: str, max_results: int = 5) -> List[Paper]:
+    url = "https://api.crossref.org/works"
+    params = {"query": query, "rows": max_results, "select": "title,author,URL,created"}
+    headers = {"User-Agent": USER_AGENT}
+    r = requests.get(url, params=params, headers=headers, timeout=20)
+    r.raise_for_status()
+    data = r.json()
+    out: List[Paper] = []
+    for item in data.get("message", {}).get("items", []):
+        title = item.get("title", [""])[0]
+        url_item = item.get("URL", "")
+        authors = [f"{a.get('given','')} {a.get('family','')}".strip()
+                   for a in item.get("author", [])]
+        year = None
+        created = item.get("created", {}).get("date-parts", [])
+        if created and created[0] and len(created[0]) >= 1:
+            year = int(created[0][0])
+        out.append(Paper(title=title, authors=authors, year=year, url=url_item, source="Crossref"))
+    return out
+EOF
+
+echo "==> Enhance Literature agent to optionally pull papers and then summarize with LLM"
+python - <<'PY'
+from pathlib import Path
+p = Path("openinorganicchemistry/agents/literature.py")
+t = p.read_text(encoding="utf-8")
+if "lit_sources" not in t:
+    t = t.replace(
+        "from openai import OpenAI  # Responses API",
+        "from openai import OpenAI  # Responses API\nfrom ..integrations.lit_sources import search_arxiv, search_crossref, Paper",
+    )
+    t = t.replace(
+        'prompt = (\n        f"Summarize recent inorganic/PV literature about: {topic}. "\n        "Extract band gaps, stability info, synthesis methods, and key results. "\n        "Return a concise bullet summary."\n    )\n    resp = client.responses.create(model=s.model_general, input=prompt)\n    output = resp.output_text',
+        'papers = (search_arxiv(topic, max_results=5) + search_crossref(topic, max_results=5))\n    bullet = "\\n".join([f"- {p.title} ({p.year}) — {p.url}" for p in papers])\n    prompt = (\n        f"You are a PV literature assistant. Given this topic: {topic}\\n\\n"\n        f"Here is a short list of potentially relevant recent papers (from arXiv and Crossref):\\n{bullet}\\n\\n"\n        "Please produce a concise bullet summary with key parameters (band gap, stability, synthesis, device architecture) where available, and suggest 3 next steps."\n    )\n    resp = client.responses.create(model=s.model_general, input=prompt)\n    output = resp.output_text'
+    )
+    p.write_text(t, encoding="utf-8")
+    print("Updated literature agent with arXiv/Crossref integration")
+else:
+    print("Literature agent already enhanced; skipping")
+PY
+
+echo "==> Add docs directory with detailed guides"
+mkdir -p docs
+
+cat > docs/ARCHITECTURE.md << 'EOF'
+# Architecture
+
+OpenInorganicChemistry maps core research functions to agents:
+
+- Literature Agent → source discovery and summarization.
+- Synthesis Agent → protocol design and safety notes.
+- Simulation Agent → ASE/pymatgen orchestration (pluggable DFT backends).
+- Analysis Agent → numeric summaries and visualizations.
+- Reporting Agent → stakeholder-friendly reports.
+
+The **OpenAI Agents SDK** coordinates agent routing via a triage agent and supports handoffs. The **OpenAI Responses API** is used for targeted reasoning tasks (extractions/summaries).
+
+Core subsystems:
+- `core.settings` handles secure key lookup (env → .env → macOS Keychain).
+- `core.storage` persists run records to SQLite for lineage and audits.
+- `core.dft_utils` provides EMT demo workflows (extend to production DFT).
+- `integrations.lit_sources` provides arXiv/Crossref queries.
+EOF
+
+cat > docs/CLI_REFERENCE.md << 'EOF'
+# CLI Reference
+
+```
+
+oic                  # Starts interactive menu
+oic --help
+oic doctor           # Environment check
+oic agents --input "Summarize perovskite stability"
+oic literature "perovskite stability"
+oic synth CH3NH3PbI3
+oic simulate TiO2 --backend emt --supercell 2
+oic analyze path/to/results.csv
+oic report \<run\_id>
+oic sgpt "optimize annealing profile"         # if shell-gpt installed
+
+````
+EOF
+
+cat > docs/DEBUGGING.md << 'EOF'
+# Debugging
+
+1. `oic doctor` — verify key presence, default models, sgpt availability.
+2. `coherent.deps` — re-create venv with uv or pip and sync deps.
+3. `tox` — run unit tests and linters.
+4. If Agents SDK raises event-loop errors, prefer `Runner.run_sync()` in orchestration or call from a non-async context.
+5. Use `OPENAI_API_KEY` via env or macOS Keychain to avoid permission issues.
+6. For simulation failures, start with `--backend emt` to validate install and then add heavier DFT backends.
+7. Network: arXiv/Crossref calls require outbound HTTP; confirm firewall and proxy settings.
+EOF
+
+cat > docs/SECURITY_AND_PRIVACY.md << 'EOF'
+# Security and Privacy
+
+- Secrets never committed; use env vars, `.env`, or macOS Keychain.
+- SQLite runs are local; if syncing off-device, encrypt the database or the filesystem.
+- Review Docker runs to ensure no secrets are baked into layers.
+- Apply least privilege for CI: masked secrets, minimal scopes.
+EOF
+
+cat > docs/CONTRIBUTING.md << 'EOF'
+# Contributing
+
+- Create an issue for significant changes; propose design in the issue first.
+- Use feature branches; open PRs with clear checklists.
+- Ensure `tox` passes and coverage doesn’t regress.
+- Keep functions typed and under 100 lines where possible.
+EOF
+
+cat > CHANGELOG.md << 'EOF'
+# Changelog
+
+## 1.0.1
+- Make `oic` run the interactive menu by default.
+- Add arXiv/Crossref integration to Literature agent.
+- Add docs: ARCHITECTURE, CLI_REFERENCE, DEBUGGING, SECURITY/PRIVACY, CONTRIBUTING.
+- Add optional extras: sgpt/docs/sim; mypy config.
+
+## 1.0.0
+- Initial release with CLI, Agents SDK orchestration, EMT demo simulation, analysis plots, reporting, CI, Docker.
+EOF
+
+echo "==> Sample data for analysis"
+mkdir -p data
+cat > data/sample_values.csv << 'EOF'
+-3.2
+-3.1
+-3.15
+-3.05
+-3.00
+EOF
+
+echo "==> Additional tests for simulation and analysis"
+cat > tests/test_simulation.py << 'EOF'
+from __future__ import annotations
+from openinorganicchemistry.core.dft_utils import quick_emt_energy
+
+def test_quick_emt_energy_runs():
+    e = quick_emt_energy("Ti")
+    assert isinstance(e, float)
+EOF
+
+cat > tests/test_analysis_csv.py << 'EOF'
+from __future__ import annotations
+import os
+from openinorganicchemistry.agents.analysis import analyze_results
+
+def test_analyze_results(tmp_path):
+    p = tmp_path / "vals.csv"
+    p.write_text("1.0\n2.0\n3.0\n", encoding="utf-8")
+    run_id = analyze_results(str(p))
+    assert isinstance(run_id, str)
+    assert os.path.exists("convergence.png")
+EOF
+
+echo "==> Add scripts for developer convenience (sgpt install, smoke, docker run)"
+mkdir -p scripts
+
+cat > scripts/install_sgpt.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+python -m pip install --upgrade shell-gpt
+echo "If needed: export OPENAI_API_KEY=sk-..."
+echo "Try: sgpt 'hello'"
+EOF
+chmod +x scripts/install_sgpt.sh
+
+cat > scripts/run_smoke.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "==> Doctor"
+oic doctor || true
+echo "==> Literature (mock topic)"
+oic literature "perovskite stability" || true
+echo "==> Synthesis"
+oic synth CH3NH3PbI3 || true
+echo "==> Simulation"
+oic simulate Ti --backend emt --supercell 1
+echo "==> Analysis"
+oic analyze data/sample_values.csv
+echo "==> Report (uses last run id is manual; this is a placeholder smoke step)"
+EOF
+chmod +x scripts/run_smoke.sh
+
+cat > scripts/docker_run.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+docker run --rm -it -e OPENAI_API_KEY -v "$PWD":/app openinorganicchemistry:latest oic menu
+EOF
+chmod +x scripts/docker_run.sh
+
+echo "==> Update README to reflect new usage and docs"
+python - <<'PY'
+from pathlib import Path
+p = Path("README.md")
+s = p.read_text(encoding="utf-8")
+if "oic\n```" in s and "oic menu" not in s:
+    s = s.replace("```bash\noic\n```", "```bash\noic\n# or explicitly\noic menu\n```")
+if "Documentation Pointers" in s and "- Shell-GPT project" in s:
+    s = s.replace("Documentation Pointers (comment links)", "Documentation Pointers")
+p.write_text(s, encoding="utf-8")
+print("README.md updated")
+PY
+
+echo "==> Optional: pre-commit config, Ruff/Black convenience"
+cat > .pre-commit-config.yaml << 'EOF'
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.8
+    hooks:
+      - id: ruff
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+EOF
+
+echo "==> Add CITATION.cff"
+cat > CITATION.cff << 'EOF'
+cff-version: 1.2.0
+message: "If you use OpenInorganicChemistry in your work, please cite:"
+title: "OpenInorganicChemistry: AI-Enhanced Solar Materials Research Assistant"
+authors:
+  - family-names: Jois
+    given-names: Nik
+version: "1.0.1"
+date-released: "2025-09-06"
+license: MIT
+EOF
+
+echo "==> Expand Agents SDK orchestration to use run_sync and optional streaming"
+python - <<'PY'
+from pathlib import Path
+p = Path("openinorganicchemistry/agents/orchestration.py")
+t = p.read_text(encoding="utf-8")
+if "run_sync" not in t:
+    t = t.replace(
+        "async def run_workflow(input_text: Optional[str] = None):",
+        "async def run_workflow(input_text: Optional[str] = None, streamed: bool = False):"
+    )
+    t = t.replace(
+        "result = await Runner.run(triage_agent, input_text)",
+        "if streamed:\n        result = await Runner.run_streamed(triage_agent, input_text)\n    else:\n        result = await Runner.run(triage_agent, input_text)"
+    )
+    t = t.replace(
+        "def run_workflow_sync(input_text: Optional[str] = None) -> str:",
+        "def run_workflow_sync(input_text: Optional[str] = None, streamed: bool = False) -> str:"
+    )
+    t = t.replace(
+        "return asyncio.get_event_loop().run_until_complete(run_workflow(input_text))",
+        "return asyncio.get_event_loop().run_until_complete(run_workflow(input_text, streamed=streamed))"
+    )
+    p.write_text(t, encoding="utf-8")
+    print("orchestration updated with streamed/run_sync options")
+else:
+    print("orchestration already has run_sync handling; skipping")
+PY
+
+echo "==> Add docs badge and links to README top"
+python - <<'PY'
+from pathlib import Path
+p = Path("README.md")
+s = p.read_text(encoding="utf-8")
+badge = "[CLI Reference](docs/CLI_REFERENCE.md) • [Architecture](docs/ARCHITECTURE.md) • [Debugging](docs/DEBUGGING.md)"
+if badge not in s:
+    s = s.replace("## Highlights", badge + "\n\n## Highlights")
+p.write_text(s, encoding="utf-8")
+print("README badges inserted")
+PY
+
+echo "==> Final tips"
+cat << 'TXT'
+
+Done.
+
+Recommended next steps:
+  1) Create env and install deps:
+       uv venv && source .venv/bin/activate && uv sync --all-extras
+     or pip:
+       python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
+  2) (Optional) Install Shell-GPT:
+       scripts/install_sgpt.sh
+  3) Set OPENAI_API_KEY env var or run scripts/configure_api_key_macos.sh
+  4) Run smoke:
+       scripts/run_smoke.sh
+  5) Run the interactive CLI:
+       oic            # launches menu
+       oic doctor
+       oic literature "perovskite stability"
+  6) CI and Docker:
+       coherent.build --docker
+       scripts/docker_run.sh
+
+TXT
+````
