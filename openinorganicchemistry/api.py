@@ -12,6 +12,8 @@ from .agents.simulation import run_simulation
 from .agents.analysis import analyze_results
 from .agents.reporting import generate_report
 from .agents.orchestration import run_workflow
+from .integrations.websearch import web_search
+from .agents.codex import codex_answer
 
 
 app = FastAPI(title="OpenInorganicChemistry API")
@@ -84,5 +86,34 @@ def run(host: str = "0.0.0.0", port: int = 8000) -> None:
     import uvicorn
 
     uvicorn.run("openinorganicchemistry.api:app", host=host, port=port, reload=False)
+
+
+class SearchRequest(BaseModel):
+    query: str
+    provider: str = "auto"
+    max_results: int = 5
+
+
+@app.post("/search")
+def api_search(req: SearchRequest) -> dict:
+    results = web_search(req.query, provider=req.provider, max_results=req.max_results)
+    return {
+        "results": [
+            {"title": r.title, "url": r.url, "snippet": r.snippet}
+            for r in results
+        ]
+    }
+
+
+class CodexRequest(BaseModel):
+    question: str
+    provider: str = "auto"
+    max_results: int = 5
+
+
+@app.post("/codex")
+def api_codex(req: CodexRequest) -> dict:
+    run_id = codex_answer(req.question, provider=req.provider, max_results=req.max_results)
+    return {"run_id": run_id}
 
 

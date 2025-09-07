@@ -18,6 +18,8 @@ from .agents.simulation import run_simulation
 from .agents.analysis import analyze_results
 from .agents.reporting import generate_report
 from .integrations.sgpt import run_sgpt_if_available
+from .integrations.websearch import web_search
+from .agents.codex import codex_answer
 
 app = typer.Typer(add_completion=False, help="OpenInorganicChemistry CLI")
 console = Console()
@@ -128,6 +130,32 @@ def sgpt(
 	shell: bool = typer.Option(False, "--shell", "-s", help="Use sgpt in shell mode"),
 ) -> None:
 	run_sgpt_if_available(prompt=prompt, shell=shell)
+
+
+@app.command()
+def search(
+	query: str = typer.Argument(..., help="Search query"),
+	provider: str = typer.Option("auto", help="auto|tavily|serpapi|duckduckgo"),
+	max_results: int = typer.Option(5, help="Max results"),
+) -> None:
+	results = web_search(query, provider=provider, max_results=max_results)
+	table = Table(show_header=True, header_style="bold")
+	table.add_column("Title")
+	table.add_column("URL")
+	table.add_column("Snippet")
+	for r in results:
+		trunc = r.snippet[:120] + ("..." if len(r.snippet) > 120 else "")
+		table.add_row(r.title, r.url, trunc)
+	console.print(table)
+
+
+@app.command()
+def codex(
+	question: str = typer.Argument(..., help="Question to answer"),
+	provider: str = typer.Option("auto", help="Search provider"),
+	max_results: int = typer.Option(5, help="Max results"),
+) -> None:
+	codex_answer(question, provider=provider, max_results=max_results)
 
 
 def main() -> None:
