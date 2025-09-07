@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    image: scipaper:latest
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: uvicorn scipaper.main:app --host 0.0.0.0 --port 8000 --reload
+
