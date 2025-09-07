@@ -29,10 +29,11 @@ def predict_properties(formula: str) -> Dict[str, Any]:
     try:
         features = featurize_structure(formula)
         # Demo prediction (replace with real model.predict([features]))
-        band_gap = 1.1 + sum(features[:5]) * 0.1  # Toy prediction
+        feature_values = list(features.values())[:5] if features else [0] * 5
+        band_gap = 1.1 + sum(feature_values) * 0.1  # Toy prediction
         stability = band_gap > 1.0  # Simple rule
         output = f"Predicted band gap for {formula}: {band_gap:.2f} eV, Stable: {stability}"
-        pred_dict = {"band_gap": band_gap, "stability": stability, "features": features[:5]}
+        pred_dict = {"band_gap": band_gap, "stability": stability, "features": feature_values}
         logger.info("Prediction completed for %s", formula)
     except Exception as e:
         logger.error("Prediction failed for formula %s", formula, exc_info=True)

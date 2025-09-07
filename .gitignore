@@ -1,27 +1,23 @@
+# Environments
+.env
+.venv
+venv/
 __pycache__/
+
+# Poetry
+poetry.lock
+.pypoetry.toml
+
+# VSCode
+.vscode/
+
+# Pytest
+.pytest_cache/
+.tox/
+
+# Other
 *.pyc
 *.pyo
 *.pyd
-*.DS_Store
-.env
-.env.local
-.venv/
-.uv/
-.pytest_cache/
-.coverage
-dist/
-build/
-htmlcov/
-.site/
-.mypy_cache/
-.ruff_cache/
-.ipynb_checkpoints/
-.cache/
-.eggs/
-*.egg-info/
-.vscode/
-.devcontainer/
-*.log
-reports/
-oic_runs.sqlite3
+.DS_Store
 

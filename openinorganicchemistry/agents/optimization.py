@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from skopt import gp_minimize
 from skopt.space import Real
 from ..core.storage import RunRecord, save_run
@@ -14,7 +14,7 @@ def objective(params: Dict[str, Any]) -> float:
     x, y = params['x'], params['y']
     return x**2 + y**2
 
-def optimize_params(target: str, param_space: Dict[str, Dict[str, Any]] = None, n_calls: int = 20) -> Dict[str, Any]:
+def optimize_params(target: str, param_space: Optional[Dict[str, Dict[str, Any]]] = None, n_calls: int = 20) -> Dict[str, Any]:
     """Perform Bayesian optimization for simulation or synthesis parameters."""
     if param_space is None:
         # Default space for demo

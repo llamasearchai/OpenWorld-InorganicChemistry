@@ -10,7 +10,7 @@ import logging
 try:
     import keyring
 except ImportError:
-    keyring = None
+    keyring = None  # type: ignore
 
 # Load .env if present
 load_dotenv(override=False)

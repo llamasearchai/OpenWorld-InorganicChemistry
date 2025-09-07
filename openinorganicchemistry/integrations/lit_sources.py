@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import requests
 
@@ -20,7 +20,7 @@ class Paper:
 
 def search_arxiv(query: str, max_results: int = 5) -> List[Paper]:
     url = "http://export.arxiv.org/api/query"
-    params = {
+    params: dict[str, Union[str, int]] = {
         "search_query": query,
         "start": 0,
         "max_results": max_results,
@@ -65,7 +65,7 @@ def _extract_year(xml: str) -> Optional[int]:
 
 def search_crossref(query: str, max_results: int = 5) -> List[Paper]:
     url = "https://api.crossref.org/works"
-    params = {"query": query, "rows": max_results, "select": "title,author,URL,created"}
+    params: dict[str, Union[str, int]] = {"query": query, "rows": max_results, "select": "title,author,URL,created"}
     headers = {"User-Agent": USER_AGENT}
     r = requests.get(url, params=params, headers=headers, timeout=20)
     r.raise_for_status()

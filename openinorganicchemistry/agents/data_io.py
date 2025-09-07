@@ -42,8 +42,11 @@ def export_to_cif(materials: List[MaterialSpec], output_file: str = "materials.c
         with open(output_file, "w") as f:
             for spec in materials:
                 # Generate simple structure for demo
-                comp = Structure.from_composition(spec.formula)
-                write(f, comp.to(fmt='cif'), append=True)
+                # Note: In production, use proper structure generation
+                from pymatgen.core import Composition
+                comp = Composition(spec.formula)  # Simplified for demo
+                f.write(f"# Material: {spec.formula}\n")
+                f.write(f"# Notes: {spec.notes}\n\n")
         logger.info("Export completed to %s", output_file)
     except Exception as e:
         logger.error("Export failed", exc_info=True)
@@ -55,7 +58,7 @@ def export_to_cif(materials: List[MaterialSpec], output_file: str = "materials.c
         RunRecord(
             id=run_id,
             kind="data_export",
-            input=len(materials),
+            input=str(len(materials)),
             output=output_file,
             meta={"n_materials": len(materials)}
         )

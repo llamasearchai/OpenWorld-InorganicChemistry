@@ -1,23 +1,27 @@
-FROM python:3.11-slim
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
+# Set work directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# Install poetry
+RUN pip install poetry
 
-COPY pyproject.toml README.md LICENSE ./
-COPY openinorganicchemistry ./openinorganicchemistry
-COPY tools ./tools
-COPY tests ./tests
+# Copy dependency definition files
+COPY pyproject.toml poetry.lock /app/
 
-RUN pip install --upgrade pip && pip install -e ".[dev]"
+# Install dependencies
+RUN poetry config virtualenvs.create false && poetry install --no-dev --no-root
 
-ENTRYPOINT ["oic"]
-CMD ["--help"]
+# Copy the application code
+COPY ./backend/app /app/app
+
+# Expose port 8000 and run the application
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union, Any
 
 import requests
 
@@ -16,10 +16,20 @@ class WebResult:
 
 def _search_duckduckgo(query: str, max_results: int, timeout: int) -> List[WebResult]:
     url = "https://api.duckduckgo.com/"
-    params = {"q": query, "format": "json", "no_redirect": 1, "no_html": 1}
-    r = requests.get(url, params=params, timeout=timeout)
-    r.raise_for_status()
-    data = r.json()
+    params: dict[str, Union[str, int]] = {"q": query, "format": "json", "no_redirect": 1, "no_html": 1}
+    try:
+        r = requests.get(url, params=params, timeout=timeout)
+        r.raise_for_status()
+        # Handle cases where DDG returns HTML instead of JSON
+        if not r.headers.get('content-type', '').startswith('application/json'):
+            return []
+        data = r.json()
+        if not data:
+            return []
+    except (requests.RequestException, ValueError):
+        # Return empty list on any network or parsing error
+        return []
+
     out: List[WebResult] = []
     # Prefer explicit results if present
     for item in data.get("Results", [])[:max_results]:
@@ -60,7 +70,7 @@ def _search_serpapi(query: str, max_results: int, timeout: int) -> List[WebResul
     if not api_key:
         return []
     url = "https://serpapi.com/search.json"
-    params = {"q": query, "engine": "google", "api_key": api_key, "num": max_results}
+    params: dict[str, Union[str, int]] = {"q": query, "engine": "google", "api_key": api_key, "num": max_results}
     r = requests.get(url, params=params, timeout=timeout)
     r.raise_for_status()
     data = r.json()

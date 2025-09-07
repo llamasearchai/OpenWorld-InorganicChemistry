@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import Literal
 
 from .agents.literature import literature_query
 from .agents.synthesis import propose_synthesis
@@ -49,7 +50,7 @@ def api_synthesis(req: SynthesisRequest) -> dict:
 
 class SimulationRequest(BaseModel):
     formula: str
-    backend: str = "emt"
+    backend: Literal["emt", "ase", "external"] = "emt"
     supercell: int = 1
 
 

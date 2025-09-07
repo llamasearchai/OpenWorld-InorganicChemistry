@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
-from typing import Optional
+from typing import Optional, Literal, Dict, Callable, Tuple, Any
 
 import typer
 from rich.console import Console
@@ -38,7 +38,7 @@ def _banner() -> None:
 def menu() -> None:
 	"""Interactive menu for day-to-day work."""
 	_banner()
-	actions = {
+	actions: Dict[str, Tuple[str, Callable[..., Any]]] = {
 		"1": ("Literature Review", literature_query),
 		"2": ("Propose Synthesis Pathways", propose_synthesis),
 		"3": ("Run Simulation", run_simulation),
