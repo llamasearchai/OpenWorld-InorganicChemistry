@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-from typing import Optional
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 from .agents.literature import literature_query

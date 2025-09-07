@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import logging
 import pandas as pd
-from ase.io import read, write
+from ase.io import write
 from pymatgen.core import Structure
-from typing import List, Optional
+from typing import List
 from ..core.chemistry import MaterialSpec
 from ..core.storage import RunRecord, save_run
 import uuid
-import os
 
 logger = logging.getLogger(__name__)
 

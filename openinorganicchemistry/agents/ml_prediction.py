@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, Optional
-from pymatgen.core import Composition, Structure
+from typing import Dict, Any
+from pymatgen.core import Composition
 from matminer.featurizers.composition import ElementProperty
-from matminer.featurizers.site import SiteStatsFingerprint
 from sklearn.linear_model import LinearRegression
-import joblib
 import uuid
 
 from ..core.storage import RunRecord, save_run
@@ -20,7 +18,7 @@ demo_model = LinearRegression()
 def featurize_structure(formula: str) -> Dict[str, Any]:
     """Featurize material structure for ML prediction."""
     comp = Composition(formula)
-    structure = Structure.from_composition(comp, structures_enumeration=None)  # Simple structure
+    # Structure construction omitted for lightweight demo
     ep = ElementProperty.from_preset("magpie")
     features = ep.featurize(comp)
     return features

@@ -23,7 +23,6 @@ def test_literature_mock(monkeypatch):
 
     monkeypatch.setattr(mod, "OpenAI", lambda api_key=None: DummyClient())
     # ensure settings returns a key
-    from openinorganicchemistry.core.settings import Settings
 
     monkeypatch.setenv("OPENAI_API_KEY", "sk-TEST")
     run_id = literature_query()

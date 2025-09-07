@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from skopt import gp_minimize
-from skopt.space import Real, Integer
-from skopt.learning import GaussianProcessRegressor
-from skopt.learning.gpr import GPR
+from skopt.space import Real
 from ..core.storage import RunRecord, save_run
 import uuid
 

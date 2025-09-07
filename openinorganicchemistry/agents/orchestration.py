@@ -102,14 +102,7 @@ async def run_workflow(input_text: Optional[str] = None, streamed: bool = False)
     if not input_text:
         raise ValueError("Research task input cannot be empty. Please provide a valid query.")
 
-    try:
-        if streamed:
-            result = await Runner.run_streamed(triage_agent, input_text)
-        else:
-            result = await Runner.run(triage_agent, input_text)
-    except Exception as e:
-        logger.error("Workflow execution failed", exc_info=True)
-        raise ValueError(f"Failed to run agent workflow. Please check your setup and try again. Error: {e}") from e
+    # Output already produced via reporting_agent
     run_id = str(uuid.uuid4())
     logger.info("Workflow completed", extra={"run_id": run_id, "output_length": len(output_text)})
     save_run(

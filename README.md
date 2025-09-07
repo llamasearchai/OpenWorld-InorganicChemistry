@@ -4,7 +4,7 @@
 
 Building better panels with fewer researchers. OpenInorganicChemistry is a macOS-compatible, Dockerizable Python research platform that automates solar materials workflows: literature review, synthesis planning, simulation, analysis, and reporting.
 
-- Author: Nik Jois
+- Author: Nikhil Jois
 - License: MIT
 
 ### Highlights

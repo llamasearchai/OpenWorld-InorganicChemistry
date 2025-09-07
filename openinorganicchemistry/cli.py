@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .core.settings import Settings
-from .agents.orchestration import run_workflow, list_agents
+from .agents.orchestration import run_workflow
 from .agents.literature import literature_query
 from .agents.synthesis import propose_synthesis
 from .agents.simulation import run_simulation
