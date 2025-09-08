@@ -17,15 +17,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Sync env
+      - name: Set up venv and install deps
         run: |
           python -m venv .venv
           . .venv/bin/activate
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-      - name: Run tox
+          pip install -e .
+          pip install pytest httpx
+      - name: Run tests
         run: |
           . .venv/bin/activate
-          python -m tox -q
-
+          pytest -q
 
