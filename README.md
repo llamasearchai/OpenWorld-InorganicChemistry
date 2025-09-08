@@ -1,6 +1,10 @@
 # OpenWorld-InorganicChemistry
 
-An open-source platform for inorganic materials discovery that , synthesis, and analysis using LLMs and AI Agents.
+<div align="center">
+  <img src="OpenWorld-InorganicChemistry.png" alt="OpenWorld-InorganicChemistry Logo" width="400"/>
+</div>
+
+An open-source platform for inorganic materials discovery, synthesis, and analysis using LLMs and AI Agents.
 
 ## Overview
 

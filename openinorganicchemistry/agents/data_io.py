@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import logging
 import pandas as pd
-from ase.io import write
-from pymatgen.core import Structure
 from typing import List
 from ..core.chemistry import MaterialSpec
 from ..core.storage import RunRecord, save_run
@@ -43,8 +41,6 @@ def export_to_cif(materials: List[MaterialSpec], output_file: str = "materials.c
             for spec in materials:
                 # Generate simple structure for demo
                 # Note: In production, use proper structure generation
-                from pymatgen.core import Composition
-                comp = Composition(spec.formula)  # Simplified for demo
                 f.write(f"# Material: {spec.formula}\n")
                 f.write(f"# Notes: {spec.notes}\n\n")
         logger.info("Export completed to %s", output_file)

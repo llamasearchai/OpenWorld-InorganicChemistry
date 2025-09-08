@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import os
-import shutil
-from typing import Optional, Literal, Dict, Callable, Tuple, Any
+from typing import Optional, Dict, Callable, Tuple, Any
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from .core.settings import Settings
 from .agents.orchestration import run_workflow
 from .agents.literature import literature_query
 from .agents.synthesis import propose_synthesis
@@ -73,19 +71,41 @@ def menu() -> None:
 def doctor() -> None:
 	"""Check environment, versions, paths, and key setup."""
 	_banner()
-	s = Settings.load()
-	rows = [
-		("Python", os.popen("python --version").read().strip()),
-		("OpenAI key present", "yes" if s.openai_api_key_masked else "no"),
-		("Default LLM (general)", s.model_general),
-		("Default LLM (fast)", s.model_fast),
-		("sgpt available", "yes" if shutil.which("sgpt") else "no"),
-	]
-	table = Table(title="Environment")
-	table.add_column("Item", style="bold")
-	table.add_column("Value")
-	for k, v in rows:
-		table.add_row(k, v)
+	
+	# Use the new comprehensive validation system
+	from .core.validation import SystemValidator
+	
+	validator = SystemValidator()
+	results = validator.run_all_checks()
+	
+	# Create enhanced table with validation results
+	table = Table(title="System Validation Report")
+	table.add_column("Check", style="bold", width=25)
+	table.add_column("Status", width=10)
+	table.add_column("Details", style="dim")
+	
+	for name, result in results.items():
+		status_style = {
+			"pass": "green",
+			"warn": "yellow",
+			"fail": "red"
+		}.get(result.status, "white")
+		
+		status_icon = {
+			"pass": "✅",
+			"warn": "⚠️ ",
+			"fail": "❌"
+		}.get(result.status, "❓")
+		
+		table.add_row(
+			name,
+			f"[{status_style}]{status_icon}[/{status_style}]",
+			result.message
+		)
+		
+		if result.details:
+			table.add_row("", "", f"[dim]→ {result.details}[/dim]")
+	
 	console.print(table)
 
 
@@ -147,6 +167,113 @@ def search(
 		trunc = r.snippet[:120] + ("..." if len(r.snippet) > 120 else "")
 		table.add_row(r.title, r.url, trunc)
 	console.print(table)
+
+
+@app.command()
+def export_data(
+    format: str = typer.Option("json", help="Export format: json, csv, sqlite"),
+    output: str = typer.Option("export", help="Output file/directory path"),
+    experiment: Optional[str] = typer.Option(None, help="Specific experiment to export")
+) -> None:
+    """Export experimental data in various formats."""
+    from .core.data_formats import DataExporter
+    
+    console.print(f"[bold]Exporting data in {format} format...[/bold]")
+    
+    # Mock experimental data for demonstration
+    sample_data = {
+        "materials": [
+            {"formula": "TiO2", "band_gap": 3.2, "synthesis_temp": 450},
+            {"formula": "ZnO", "band_gap": 3.37, "synthesis_temp": 380},
+            {"formula": "Al2O3", "band_gap": 8.8, "synthesis_temp": 1200}
+        ],
+        "experiments": [
+            {"id": 1, "date": "2024-01-15", "success": True},
+            {"id": 2, "date": "2024-01-16", "success": False}
+        ]
+    }
+    
+    try:
+        if format == "json":
+            DataExporter.to_json(sample_data, f"{output}.json")
+        elif format == "csv":
+            # Export each table as separate CSV
+            for table_name, data in sample_data.items():
+                if isinstance(data, list) and data:
+                    DataExporter.to_csv(data, f"{output}_{table_name}.csv")
+        elif format == "sqlite":
+            DataExporter.to_sqlite(sample_data, f"{output}.db")
+        else:
+            console.print(f"[red]Unsupported format: {format}[/red]")
+            return
+        
+        console.print(f"[green]✅ Data exported successfully to {output}[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Export failed: {e}[/red]")
+
+
+@app.command()
+def archive_experiment(
+    name: str = typer.Argument(help="Experiment name"),
+    description: Optional[str] = typer.Option(None, help="Experiment description")
+) -> None:
+    """Archive a complete experiment with all data and metadata."""
+    from .core.data_formats import ExperimentArchiver
+    
+    console.print(f"[bold]Archiving experiment: {name}[/bold]")
+    
+    # Mock experimental data and metadata
+    data = {
+        "results": [
+            {"material": "TiO2", "property": "band_gap", "value": 3.2},
+            {"material": "ZnO", "property": "band_gap", "value": 3.37}
+        ],
+        "conditions": [
+            {"temperature": 450, "pressure": 1.0, "duration": 24}
+        ]
+    }
+    
+    metadata = {
+        "description": description or f"Archived experiment: {name}",
+        "user": os.environ.get("USER", "unknown"),
+        "git_commit": os.popen("git rev-parse HEAD 2>/dev/null").read().strip() or "unknown"
+    }
+    
+    try:
+        archiver = ExperimentArchiver()
+        archive_path = archiver.archive_experiment(name, data, metadata)
+        console.print(f"[green]✅ Experiment archived to: {archive_path}[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Archive failed: {e}[/red]")
+
+
+@app.command()
+def list_experiments() -> None:
+    """List all archived experiments."""
+    from .core.data_formats import ExperimentArchiver
+    
+    try:
+        archiver = ExperimentArchiver()
+        experiments = archiver.list_experiments()
+        
+        if not experiments:
+            console.print("[yellow]No archived experiments found[/yellow]")
+            return
+        
+        table = Table(title="Archived Experiments")
+        table.add_column("Name", style="bold")
+        table.add_column("Timestamp", style="cyan")
+        table.add_column("Path", style="dim")
+        
+        for exp in experiments:
+            table.add_row(exp["name"], exp["timestamp"], exp["path"])
+        
+        console.print(table)
+    
+    except Exception as e:
+        console.print(f"[red]❌ Failed to list experiments: {e}[/red]")
 
 
 @app.command()

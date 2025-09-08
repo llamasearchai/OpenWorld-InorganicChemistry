@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union
 
 import requests
 

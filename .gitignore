@@ -86,14 +86,37 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environment and Secret Files
 .env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+.env.*
+!.env.example
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# API Keys and Secrets
+**/secrets/
+**/config/secrets/
+**/*secret*
+**/*key*
+**/*token*
+**/*credential*
+**/*password*
+.secrets/
+secrets.json
+secrets.yaml
+secrets.yml
+config.json
+config.yaml
+config.yml
 
 # Spyder project settings
 .spyderproject
@@ -177,4 +200,72 @@ vasprun.xml
 *.pkl
 models/
 checkpoints/
+*.onnx
+*.tflite
+*.pt
+*.pth
+*.safetensors
+
+# AI/LLM specific
+.langchain/
+.openai_cache/
+embeddings/
+vector_stores/
+fine_tuning/
+
+# Scientific data formats
+*.netcdf
+*.nc
+*.mat
+*.hdf
+*.fits
+
+# Jupyter extensions
+.jupyter/
+.ipython/
+
+# Security and Authentication
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.csr
+auth.json
+oauth.json
+service-account.json
+gcp-key.json
+aws-credentials
+azure-credentials
+
+# Database files with potential sensitive data
+*.sqlite3-wal
+*.sqlite3-shm
+*.db-wal
+*.db-shm
+
+# Backup files that might contain secrets
+*.backup
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store?
+
+# IDE and Editor files that might contain secrets
+.vscode/settings.json
+.vscode/launch.json
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/misc.xml
+.idea/modules.xml
+.idea/inspectionProfiles/
+.idea/codeStyles/
+
+# Git hooks that might contain sensitive commands
+.git/hooks/
 
