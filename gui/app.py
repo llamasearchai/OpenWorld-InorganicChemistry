@@ -13,8 +13,7 @@ if st.button("Run Workflow"):
         run_id = run_workflow_sync(input_text)
         st.success(f"Workflow completed. Run ID: {run_id}")
         output = st.text_area("Output", height=300, key="output")
-        # Assume output from run, for demo
-        st.write("Demo output: Workflow ran successfully.")
+        st.write(f"Workflow completed successfully with run ID: {run_id}")
 
 run_id = st.text_input("Enter run_id for report")
 if st.button("Generate Report"):
