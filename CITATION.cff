@@ -1,10 +1,23 @@
 cff-version: 1.2.0
-message: "If you use OpenInorganicChemistry in your work, please cite:"
-title: "OpenInorganicChemistry: AI-Enhanced Solar Materials Research Assistant"
+message: "If you use OpenWorld-InorganicChemistry in your research, please cite:"
+title: "OpenWorld-InorganicChemistry: An AI-Powered Platform for Inorganic Materials Discovery and Analysis"
 authors:
   - family-names: Jois
     given-names: Nikhil
-version: "1.1.0"
-date-released: "2025-09-07"
+    email: nikjois@llamasearch.ai
+    affiliation: "LlamaSearch AI"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+version: "1.1.2"
+date-released: "2025-09-08"
 license: MIT
+repository-code: "https://github.com/llamasearchai/OpenWorld-InorganicChemistry"
+abstract: "OpenWorld-InorganicChemistry is an open-source platform that accelerates inorganic materials discovery through AI agents, combining literature review, synthesis planning, computational simulation, and automated analysis workflows."
+keywords:
+  - materials-science
+  - artificial-intelligence
+  - computational-chemistry
+  - materials-discovery
+  - synthesis-planning
+  - python
+  - research-tools
 
