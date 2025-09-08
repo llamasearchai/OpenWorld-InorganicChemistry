@@ -4,29 +4,69 @@ An open-source platform for inorganic materials discovery, synthesis, and analys
 
 ## Overview
 
-OpenWorld-InorganicChemistry is a powerful, open-source platform designed to accelerate the discovery of new inorganic materials for clean energy, electronics, and other critical applications. By leveraging state-of-the-art Large Language Models (LLMs) and AI Agents, this platform automates and streamlines the complex process of materials research.
+OpenWorld-InorganicChemistry accelerates discovery of new inorganic materials using modular agents for simulation, literature search, synthesis planning, and analysis. It provides a Python API, a CLI, and a FastAPI server, with optional web search integration.
+
+## Quickstart
+
+- Prereqs: Python 3.9+, `pip`, optional: `OPENAI_API_KEY` in your environment.
+
+Install (editable):
+
+```
+python -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+pip install pytest httpx
+```
+
+Run tests:
+
+```
+pytest -q
+```
+
+CLI help:
+
+```
+python -m openinorganicchemistry.cli --help
+```
+
+Run API locally:
+
+```
+uvicorn openinorganicchemistry.api:app --reload
+```
+
+Docker (API):
+
+```
+docker build -t oic-api .
+docker run -p 8000:8000 oic-api
+```
 
 ## Features
 
-- **Materials Discovery**: Predict the properties of novel inorganic materials, including stability, electronic structure, and catalytic activity, using a combination of Density Functional Theory (DFT), machine learning (ML), and AI.
-- **Synthesis Planning**: Generate viable synthesis pathways for new materials through retrosynthesis, reaction prediction, and process optimization.
-- **Data Analysis**: Analyze and visualize both experimental and computational data with powerful tools for statistical analysis, machine learning, and data visualization.
+- Materials discovery: quick EMT simulation demo, DFT utilities, ML placeholders.
+- Literature + Codex agents: query literature and synthesize answers with web context.
+- Analysis: parse CSV results and generate convergence plots.
+- API + CLI: FastAPI endpoints and command-line tasks.
 
-## Tech Stack
+## Configuration
 
-- **Backend**: Python, FastAPI, Pydantic, LangChain
-- **Database**: MongoDB / PostgreSQL
-- **Deployment**: Docker, Kubernetes
+- `.env` or environment variables provide keys (e.g., `OPENAI_API_KEY`).
+- See `openinorganicchemistry/core/settings.py` for options and defaults.
 
-## Getting Started
+## Development
 
-(Coming soon)
-
-## Contributing
-
-(Coming soon)
+- Format/lint: pre-commit hooks configured in `.pre-commit-config.yaml`.
+- Tests: `pytest -q` (uses local mocks; no network required).
+- CI: GitHub Actions runs tests on Ubuntu and macOS.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
+## Citation
+
+See [CITATION.cff](CITATION.cff).
