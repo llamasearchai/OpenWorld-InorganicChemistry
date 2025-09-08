@@ -3,7 +3,7 @@ from fastapi import FastAPI
 app = FastAPI(
     title="OpenWorld-InorganicChemistry",
     description="An open-source platform for inorganic materials discovery, synthesis, and analysis using LLMs and AI Agents.",
-    version="1.1.0",
+    version="1.1.2",
 )
 
 @app.get("/health", status_code=200)
