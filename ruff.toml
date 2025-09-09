@@ -25,3 +25,11 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 
+[per-file-ignores]
+"src/scipaper/api/dependencies.py" = ["B008"]
+"src/scipaper/cli.py" = ["E501", "PLC0415", "SIM102", "PLR2004", "N806", "B904"]
+"src/scipaper/core/advanced_search.py" = ["PLR0913", "E501", "B904", "SIM108", "SIM103"]
+"src/scipaper/core/fetcher.py" = ["UP038", "E501", "B023", "B904", "PLR0912", "RUF013", "PLC0415"]
+"src/scipaper/core/recommendations.py" = ["PLR0913", "E501", "B904"]
+"src/scipaper/core/recommendations.py" = ["PLR0913", "E501", "B904", "PLR2004"]
+"src/scipaper/core/monitoring.py" = ["PLC0415"]

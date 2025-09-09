@@ -1,6 +1,6 @@
 """SciPaper: A comprehensive scientific paper management and analysis tool."""
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Nik Jois"
 __email__ = "nikjois@llamasearch.ai"
 
@@ -20,28 +20,23 @@ from .exceptions import (
 )
 
 __all__ = [
-    # Core modules
-    "api",
-    "agents",
-    "core",
-    "sources",
-    "utils",
-
-    # Configuration
-    "settings",
-    "get_setting",
-    "is_openai_available",
-    "is_ollama_available",
-
-    # Exceptions
+    "AgentError",
+    "AuthenticationError",
+    "ConfigurationError",
+    "FetcherError",
+    "NetworkError",
+    "ParseError",
+    "RateLimitError",
     "SciPaperError",
     "SourceError",
-    "ParseError",
-    "ConfigurationError",
     "ValidationError",
-    "NetworkError",
-    "AuthenticationError",
-    "RateLimitError",
-    "AgentError",
-    "FetcherError",
+    "agents",
+    "api",
+    "core",
+    "get_setting",
+    "is_ollama_available",
+    "is_openai_available",
+    "settings",
+    "sources",
+    "utils",
 ]

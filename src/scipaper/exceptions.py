@@ -4,7 +4,7 @@
 class SciPaperError(Exception):
     """Base exception for all SciPaper errors."""
 
-    def __init__(self, message: str, details: dict = None):
+    def __init__(self, message: str, details: dict | None = None):
         super().__init__(message)
         self.message = message
         self.details = details or {}
@@ -36,15 +36,9 @@ class NetworkError(SciPaperError):
     def is_transient(self) -> bool:
         return True
 
-    def is_transient(self) -> bool:
-        return True
-
 
 class AuthenticationError(SciPaperError):
     """Exception raised when authentication fails."""
-
-    def is_transient(self) -> bool:
-        return False
 
     def is_transient(self) -> bool:
         return False
@@ -56,15 +50,9 @@ class RateLimitError(SciPaperError):
     def is_transient(self) -> bool:
         return True
 
-    def is_transient(self) -> bool:
-        return True
-
 
 class AgentError(SciPaperError):
     """Exception raised when AI agent operations fail."""
-
-    def is_transient(self) -> bool:
-        return True
 
     def is_transient(self) -> bool:
         return True

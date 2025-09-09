@@ -1,17 +1,19 @@
 """Command-line interface for SciPaper."""
 import asyncio
-from typing import Optional
+import csv
+import io
+import json
 
 import click
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 from loguru import logger
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 from .agents.paper_agents import PaperAgent
 from .config import is_ollama_available, is_openai_available, settings
 from .core.fetcher import Fetcher
-from .exceptions import FetcherError, SourceError, AgentError, ParseError
+from .exceptions import AgentError, FetcherError, ParseError
 from .utils.parse import parse_text
 
 console = Console()
@@ -20,7 +22,6 @@ console = Console()
 @click.version_option(version="1.0.0")
 def main():
     """SciPaper: A comprehensive scientific paper management and analysis tool."""
-    pass
 
 @main.command()
 def health():
@@ -51,10 +52,9 @@ def health():
 def search(query: str, sources: str, limit: int, format: str, interactive: bool):
     """Search for papers across multiple sources."""
     logger_ctx = logger.bind(command="search", query=query, sources=sources, limit=limit, format=format)
-    if interactive:
-        if not click.confirm(f"Run search for '{query}' with {limit} results?"):
-            logger_ctx.info("Search cancelled by user")
-            return
+    if interactive and not click.confirm(f"Run search for '{query}' with {limit} results?"):
+        logger_ctx.info("Search cancelled by user")
+        return
     try:
         source_list = sources.split(",") if sources else None
 
@@ -63,11 +63,8 @@ def search(query: str, sources: str, limit: int, format: str, interactive: bool)
             results = await fetcher.search(query, source_list, limit)
 
             if format == "json":
-                import json
                 console.print(json.dumps(results, indent=2))
             elif format == "csv":
-                import csv
-                import io
                 output = io.StringIO()
                 if results:
                     writer = csv.DictWriter(output, fieldnames=results[0].keys())
@@ -82,14 +79,18 @@ def search(query: str, sources: str, limit: int, format: str, interactive: bool)
                 table.add_column("Source", style="blue")
                 table.add_column("DOI", style="magenta")
 
+                TITLE_MAX, AUTHORS_MAX, DOI_MAX = 60, 40, 20
+                def _trunc(val: str, n: int) -> str:
+                    return (val[:n] + "...") if len(val) > n else val
+
                 for paper in results:
-                    table.add_row(
-                        paper.get("title", "Unknown")[:60] + "..." if len(paper.get("title", "")) > 60 else paper.get("title", "Unknown"),
-                        ", ".join(paper.get("authors", ["Unknown"]))[:40] + "..." if len(", ".join(paper.get("authors", ["Unknown"]))) > 40 else ", ".join(paper.get("authors", ["Unknown"])),
-                        str(paper.get("date", "Unknown")),
-                        paper.get("source", "Unknown"),
-                        paper.get("doi", "Unknown")[:20] + "..." if len(paper.get("doi", "")) > 20 else paper.get("doi", "Unknown")
-                    )
+                    title = _trunc(paper.get("title", "Unknown"), TITLE_MAX)
+                    authors = ", ".join(paper.get("authors", ["Unknown"]))
+                    authors = _trunc(authors, AUTHORS_MAX)
+                    date = str(paper.get("date", "Unknown"))
+                    source = paper.get("source", "Unknown")
+                    doi = _trunc(paper.get("doi", "Unknown"), DOI_MAX)
+                    table.add_row(title, authors, date, source, doi)
                 console.print(table)
             else:
                 console.print("[yellow]No results found.[/yellow]")
@@ -100,11 +101,11 @@ def search(query: str, sources: str, limit: int, format: str, interactive: bool)
     except FetcherError as e:
         logger_ctx.error(f"Fetcher error in search: {e}", details=e.details)
         console.print(f"[red]Search failed due to fetcher error: {e.message}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
     except Exception as e:
         logger_ctx.error(f"Search failed: {e}")
         console.print(f"[red]Search failed: {e}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 @main.command()
 @click.argument("identifier")
@@ -114,10 +115,11 @@ def search(query: str, sources: str, limit: int, format: str, interactive: bool)
 def fetch(identifier: str, source: str, format: str, interactive: bool):
     """Fetch a specific paper by identifier (DOI, arXiv ID, etc.)."""
     logger_ctx = logger.bind(command="fetch", identifier=identifier, source=source, format=format)
-    if interactive:
-        if not click.confirm(f"Fetch paper '{identifier}' from {source or 'auto'}?"):
-            logger_ctx.info("Fetch cancelled by user")
-            return
+    if interactive and not click.confirm(
+        f"Fetch paper '{identifier}' from {source or 'auto'}?"
+    ):
+        logger_ctx.info("Fetch cancelled by user")
+        return
     try:
         async def run_fetch():
             fetcher = Fetcher()
@@ -125,11 +127,8 @@ def fetch(identifier: str, source: str, format: str, interactive: bool):
 
             if result:
                 if format == "json":
-                    import json
                     console.print(json.dumps(result, indent=2))
                 elif format == "csv":
-                    import csv
-                    import io
                     output = io.StringIO()
                     writer = csv.DictWriter(output, fieldnames=result.keys())
                     writer.writeheader()
@@ -162,11 +161,11 @@ def fetch(identifier: str, source: str, format: str, interactive: bool):
     except FetcherError as e:
         logger_ctx.error(f"Fetcher error in fetch: {e}", details=e.details)
         console.print(f"[red]Fetch failed due to fetcher error: {e.message}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
     except Exception as e:
         logger_ctx.error(f"Fetch failed: {e}")
         console.print(f"[red]Fetch failed: {e}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 @main.command()
 @click.argument("text")
@@ -176,20 +175,16 @@ def fetch(identifier: str, source: str, format: str, interactive: bool):
 def parse(text: str, types: str, format: str, interactive: bool):
     """Parse text to extract identifiers (DOIs, arXiv IDs, etc.)."""
     logger_ctx = logger.bind(command="parse", text_length=len(text), types=types, format=format)
-    if interactive:
-        if not click.confirm(f"Parse text with length {len(text)}?"):
-            logger_ctx.info("Parse cancelled by user")
-            return
+    if interactive and not click.confirm(f"Parse text with length {len(text)}?"):
+        logger_ctx.info("Parse cancelled by user")
+        return
     try:
         type_list = types.split(",") if types else None
         results = parse_text(text, type_list)
 
         if format == "json":
-            import json
             console.print(json.dumps(results, indent=2))
         elif format == "csv":
-            import csv
-            import io
             output = io.StringIO()
             if results:
                 writer = csv.DictWriter(output, fieldnames=results[0].keys())
@@ -216,11 +211,11 @@ def parse(text: str, types: str, format: str, interactive: bool):
     except ParseError as e:
         logger_ctx.error(f"Parse error: {e}", details=e.details)
         console.print(f"[red]Parse failed due to parse error: {e.message}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
     except Exception as e:
         logger_ctx.error(f"Parse failed: {e}")
         console.print(f"[red]Parse failed: {e}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 @main.command()
 @click.argument("prompt")
@@ -229,11 +224,13 @@ def parse(text: str, types: str, format: str, interactive: bool):
 @click.option("--interactive", is_flag=True, help="Enable interactive mode")
 def agent(prompt: str, sources: str, limit: int, interactive: bool):
     """Use AI agent to analyze papers and provide insights."""
-    logger_ctx = logger.bind(command="agent", prompt=prompt[:50] + "..." if len(prompt) > 50 else prompt, sources=sources, limit=limit)
-    if interactive:
-        if not click.confirm(f"Run agent analysis for prompt '{prompt[:50]}...' with {limit} papers?"):
-            logger_ctx.info("Agent analysis cancelled by user")
-            return
+    snippet = prompt[:50] + "..." if len(prompt) > 50 else prompt
+    logger_ctx = logger.bind(command="agent", prompt=snippet, sources=sources, limit=limit)
+    if interactive and not click.confirm(
+        f"Run agent analysis for prompt '{snippet}' with {limit} papers?"
+    ):
+        logger_ctx.info("Agent analysis cancelled by user")
+        return
     try:
         source_list = sources.split(",") if sources else None
 
@@ -259,16 +256,16 @@ def agent(prompt: str, sources: str, limit: int, interactive: bool):
     except AgentError as e:
         logger_ctx.error(f"Agent error: {e}", details=e.details)
         console.print(f"[red]Agent execution failed due to agent error: {e.message}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
     except Exception as e:
         logger_ctx.error(f"Agent execution failed: {e}")
         console.print(f"[red]Agent execution failed: {e}[/red]")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 @main.command()
 @click.argument("command", required=False)
 @click.pass_context
-def master(ctx, command: Optional[str]):
+def master(ctx, command: str | None):
     """Master command interface with Ollama integration"""
     logger_ctx = logger.bind(command="master", subcommand=command)
     try:

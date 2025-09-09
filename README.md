@@ -1,4 +1,4 @@
-# SciPaper 📚🔬
+# SciPaper
 
 A comprehensive scientific paper management and analysis tool with AI-powered insights and multi-source data integration.
 
@@ -29,31 +29,31 @@ A comprehensive scientific paper management and analysis tool with AI-powered in
 
 ## Features
 
-### 🔍 Multi-Source Search & Discovery
+### Multi-Source Search & Discovery
 - **Comprehensive Coverage**: Query papers from arXiv, Crossref, PubMed, Semantic Scholar, and local Xrxiv dumps
 - **Unified Search**: Single query interface across all sources with intelligent result merging
 - **Smart Ranking**: Results prioritized by relevance, recency, and source authority
 - **Batch Operations**: Process multiple papers simultaneously for large-scale analysis
 
-### 🤖 AI-Powered Analysis
+### AI-Powered Analysis
 - **OpenAI Agents SDK**: Advanced AI agent framework for paper analysis and insights
 - **Ollama Integration**: Local AI processing with privacy-preserving capabilities
 - **Intelligent Summarization**: Automatic paper summaries and key finding extraction
 - **Research Synthesis**: Cross-paper analysis and relationship identification
 
-### 📝 Smart Content Processing
+### Smart Content Processing
 - **Identifier Recognition**: Automatic detection of DOIs, arXiv IDs, ISBNs, PubMed IDs, and URLs
 - **Metadata Extraction**: Comprehensive paper metadata including authors, abstracts, citations
 - **Format Conversion**: Support for BibTeX, CSL JSON, and other academic formats
 - **Text Mining**: Extract research concepts, methodologies, and experimental details
 
-### 🛠️ Developer-Friendly
+### Developer-Friendly
 - **RESTful API**: FastAPI-based endpoints with automatic OpenAPI documentation
 - **Rich CLI**: Interactive command-line interface with rich formatting and progress indicators
 - **Docker Support**: Containerized deployment with multi-platform compatibility
 - **Extensible Architecture**: Plugin system for custom data sources and analysis modules
 
-### 🚀 Performance & Reliability
+### Performance & Reliability
 - **Caching System**: Redis-backed caching for improved performance and reduced API calls
 - **Rate Limiting**: Intelligent rate limiting with automatic backoff and retry
 - **Error Handling**: Comprehensive error handling with detailed logging and recovery

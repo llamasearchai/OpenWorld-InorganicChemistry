@@ -1,13 +1,14 @@
 """API dependencies for authentication."""
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
 
 security = HTTPBearer()
 
-async def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[str]:
+async def api_key_auth(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str | None:
     """API key authentication dependency."""
     if not credentials or not credentials.credentials:
         raise HTTPException(
@@ -23,5 +24,5 @@ async def api_key_auth(credentials: HTTPAuthorizationCredentials = Depends(secur
             detail="Invalid API key",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    logger.info(f"API key authenticated for request")
+    logger.info("API key authenticated for request")
     return api_key

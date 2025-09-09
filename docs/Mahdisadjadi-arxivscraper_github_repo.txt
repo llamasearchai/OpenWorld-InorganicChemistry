@@ -1,0 +1,1428 @@
+# Mahdisadjadi/arxivscraper Documentation
+
+**Type:** GITHUB
+**Generated:** 2025-08-27 17:46:10 UTC
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Repository Information](#repository-information)
+3. [Code Structure](#code-structure)
+4. [Key Files](#key-files)
+5. [Dependencies](#dependencies)
+6. [Usage Examples](#usage-examples)
+
+---
+
+## Repository Information
+
+- **Repository:** Mahdisadjadi/arxivscraper
+- **URL:** https://github.com/Mahdisadjadi/arxivscraper
+- **Processed:** 2025-08-27 17:46:10 UTC
+- **Description:** A python module to scrape arxiv.org for a date range and category
+
+- **Default Branch:** main
+- **Stars:** 321
+- **Forks:** 52
+- **Issues:** 9
+- **Last Updated:** 2025-08-21T13:55:58Z
+- **Primary Language:** Python
+- **License:** MIT License
+
+### Topics
+
+- api-wrapper
+- arxiv
+- arxiv-analytics
+- arxiv-api
+- python
+- scraper
+
+## Repository Structure
+
+```
+└── .github/
+    └── workflows/
+        └── ci.yaml
+        └── ci_uv.yaml
+        └── python-publish.yml
+└── arxivscraper/
+    └── __init__.py
+    └── arxivscraper.py
+    └── constants.py
+    └── util.py
+└── scripts/
+    └── arxiv_categories_v1.py
+└── tests/
+    └── test_simple.py
+└── .gitignore
+└── LICENSE
+└── README.md
+└── categories_v1.md
+└── categories_v2.md
+└── pyproject.toml
+└── setup.cfg
+└── setup.py
+└── todo.md
+└── uv.lock
+```
+
+## README Content
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.889853.svg)](https://doi.org/10.5281/zenodo.889853)
+![](https://github.com/mahdisadjadi/arxivscraper/workflows/CI/badge.svg)
+![](https://github.com/mahdisadjadi/arxivscraper/workflows/Publish%20to%20PyPi/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+# arXivScraper
+An ArXiV scraper to retrieve records from given categories and date range.
+
+## Install
+
+Use `pip` (or `pip3` for python3):
+
+```bash
+$ pip install arxivscraper
+```
+
+or download the source and use `setup.py`:
+
+```bash
+$ python setup.py install
+```
+
+To update the module using `pip`:
+```bash
+pip install arxivscraper --upgrade
+```
+
+## Examples
+
+### Without filtering
+
+You can directly use `arxivscraper` in your scripts. Let's import `arxivscraper`
+and create a scraper to fetch all preprints in condensed matter physics category
+from 27 May 2017 until 7 June 2017 (for other categories, see below):
+
+```python
+import arxivscraper
+scraper = arxivscraper.Scraper(category='physics:cond-mat', date_from='2017-05-27',date_until='2017-06-07')
+```
+Once we built an instance of the scraper, we can start the scraping:
+
+```python
+output = scraper.scrape()
+```
+While scraper is running, it prints its status:
+
+```
+fetching up to  1000 records...
+fetching up to  2000 records...
+Got 503. Retrying after 30 seconds.
+fetching up to  3000 records...
+fetching is complete.
+```
+
+Finally you can save the output in your favorite format or readily convert it into a pandas dataframe:
+```python
+import pandas as pd
+cols = ('id', 'title', 'categories', 'abstract', 'doi', 'created', 'updated', 'authors')
+df = pd.DataFrame(output,columns=cols)
+```
+
+### With filtering
+To have more control over the output, you could supply a dictionary to filter out the results. As an example, let's collect all preprints related to machine learning. This subcategory (`stat.ML`) is part of the statistics (`stat`) category. In addition, we want those preprints that word `learning` appears in their abstract.
+
+```python
+import arxivscraper.arxivscraper as ax
+scraper = ax.Scraper(category='stat',date_from='2017-08-01',date_until='2017-08-10',t=10, filters={'categories':['stat.ml'],'abstract':['learning']})
+output = scraper.scrape()
+```
+
+> In addition to `categories` and `abstract`, other available keys for `filters` are: `author` and `title`.
+
+> Note that filters are based on logical OR and not mutually exclusive. So if the specified word appears in the abstract,
+the record will be saved even if it doesn't have the specified categories.
+
+## Contributing
+Ideas/bugs/comments? Please open an issue or submit a pull request on Github.
+
+## How to cite
+If `arxivscraper` was useful in your work/research, please consider to cite it as :
+```
+Mahdi Sadjadi (2017). arxivscraper: Zenodo. http://doi.org/10.5281/zenodo.889853
+```
+
+or
+```
+@misc{msadjadi,
+  author       = {Mahdi Sadjadi},
+  title        = {arxivscraper},
+  year         = 2017,
+  doi          = {10.5281/zenodo.889853},
+  url          = {https://doi.org/10.5281/zenodo.889853}
+}
+```
+
+## Author
+* **Mahdi Sadjadi**, 2017.
+
+* Website: [mahdisadjadi.com](http://mahdisadjadi.com)
+
+* Twitter: [@mahdisadjadi](http://twitter.com/MahdiSadjadi)
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Categories
+Here is a list of all categories available on ArXiv. For a complete list of subcategories, see [categories_v2.md](categories_v2.md).
+To generate this table, see `arxivscraper/util/create_arxiv_category_markdown_table`.
+
+| Category Code | Category |
+|------|----------|
+| `cs` | Computer Science |
+| `econ` | Economics |
+| `eess` | Electrical Engineering and Systems Science |
+| `math` | Mathematics |
+| `physics` | Physics |
+| `physics:astro-ph` | Astrophysics |
+| `physics:cond-mat` | Condensed Matter |
+| `physics:gr-qc` | General Relativity and Quantum Cosmology |
+| `physics:hep-ex` | High Energy Physics - Experiment |
+| `physics:hep-lat` | High Energy Physics - Lattice |
+| `physics:hep-ph` | High Energy Physics - Phenomenology |
+| `physics:hep-th` | High Energy Physics - Theory |
+| `physics:math-ph` | Mathematical Physics |
+| `physics:nlin` | Nonlinear Sciences |
+| `physics:nucl-ex` | Nuclear Experiment |
+| `physics:nucl-th` | Nuclear Theory |
+| `physics:physics` | Physics (Other) |
+| `physics:quant-ph` | Quantum Physics |
+| `q-bio` | Quantitative Biology |
+| `q-fin` | Quantitative Finance |
+| `stat` | Statistics |
+
+## Start History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Mahdisadjadi/arxivscraper&type=Date)](https://www.star-history.com/#Mahdisadjadi/arxivscraper&Date)
+
+
+## Dependencies
+
+### Package File: pyproject.toml
+
+```
+[project]
+name = "arxivscraper"
+version = "0.0.5"
+authors = [
+    { name = "mahdisadjadi", email = "sadjadi.seyedmahdi@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pip>=25.1.1",
+    "pytest>=8.4.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+```
+
+## Code Files
+
+### Language Distribution
+
+- **py**: 7 files (58.3%)
+- **md**: 4 files (33.3%)
+- **toml**: 1 files (8.3%)
+
+## Code Size Analysis
+
+| Language | Files | Lines of Code | Size (KB) | % of Codebase |
+|----------|-------|---------------|-----------|---------------|
+| md | 4 | 482 | 52.36 | 76.3% |
+| py | 7 | 593 | 15.99 | 23.3% |
+| toml | 1 | 15 | 0.29 | 0.4% |
+| **Total** | **12** | **1090** | **68.64** | **100%** |
+
+### Key Source Files
+
+#### Directory: `arxivscraper-main`
+
+##### File: `arxivscraper-main/README.md`
+
+```markdown
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.889853.svg)](https://doi.org/10.5281/zenodo.889853)
+![](https://github.com/mahdisadjadi/arxivscraper/workflows/CI/badge.svg)
+![](https://github.com/mahdisadjadi/arxivscraper/workflows/Publish%20to%20PyPi/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+# arXivScraper
+An ArXiV scraper to retrieve records from given categories and date range.
+
+## Install
+
+Use `pip` (or `pip3` for python3):
+
+```bash
+$ pip install arxivscraper
+```
+
+or download the source and use `setup.py`:
+
+```bash
+$ python setup.py install
+```
+
+To update the module using `pip`:
+```bash
+pip install arxivscraper --upgrade
+```
+
+## Examples
+
+### Without filtering
+
+You can directly use `arxivscraper` in your scripts. Let's import `arxivscraper`
+and create a scraper to fetch all preprints in condensed matter physics category
+from 27 May 2017 until 7 June 2017 (for other categories, see below):
+
+```python
+import arxivscraper
+scraper = arxivscraper.Scraper(category='physics:cond-mat', date_from='2017-05-27',date_until='2017-06-07')
+```
+Once we built an instance of the scraper, we can start the scraping:
+
+```python
+output = scraper.scrape()
+```
+While scraper is running, it prints its status:
+
+```
+fetching up to  1000 records...
+fetching up to  2000 records...
+Got 503. Retrying after 30 seconds.
+fetching up to  3000 records...
+fetching is complete.
+```
+
+Finally you can save the output in your favorite format or readily convert it into a pandas dataframe:
+```python
+import pandas as pd
+cols = ('id', 'title', 'categories', 'abstract', 'doi', 'created', 'updated', 'authors')
+df = pd.DataFrame(output,columns=cols)
+```
+
+### With filtering
+To have more control over the output, you could supply a dictionary to filter out the results. As an example, let's collect all preprints related to machine learning. This subcategory (`stat.ML`) is part of the statistics (`stat`) category. In addition, we want those preprints that word `learning` appears in their abstract.
+
+```python
+import arxivscraper.arxivscraper as ax
+scraper = ax.Scraper(category='stat',date_from='2017-08-01',date_until='2017-08-10',t=10, filters={'categories':['stat.ml'],'abstract':['learning']})
+output = scraper.scrape()
+```
+
+> In addition to `categories` and `abstract`, other available keys for `filters` are: `author` and `title`.
+
+> Note that filters are based on logical OR and not mutually exclusive. So if the specified word appears in the abstract,
+the record will be saved even if it doesn't have the specified categories.
+
+## Contributing
+Ideas/bugs/comments? Please open an issue or submit a pull request on Github.
+
+## How to cite
+If `arxivscraper` was useful in your work/research, please consider to cite it as :
+```
+Mahdi Sadjadi (2017). arxivscraper: Zenodo. http://doi.org/10.5281/zenodo.889853
+```
+
+or
+```
+@misc{msadjadi,
+  author       = {Mahdi Sadjadi},
+  title        = {arxivscraper},
+  year         = 2017,
+  doi          = {10.5281/zenodo.889853},
+  url          = {https://doi.org/10.5281/zenodo.889853}
+}
+```
+
+## Author
+* **Mahdi Sadjadi**, 2017.
+
+* Website: [mahdisadjadi.com](http://mahdisadjadi.com)
+
+* Twitter: [@mahdisadjadi](http://twitter.com/MahdiSadjadi)
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Categories
+Here is a list of all categories available on ArXiv. For a complete list of subcategories, see [categories_v2.md](categories_v2.md).
+To generate this table, see `arxivscraper/util/create_arxiv_category_markdown_table`.
+
+| Category Code | Category |
+|------|----------|
+| `cs` | Computer Science |
+| `econ` | Economics |
+| `eess` | Electrical Engineering and Systems Science |
+| `math` | Mathematics |
+| `physics` | Physics |
+| `physics:astro-ph` | Astrophysics |
+| `physics:cond-mat` | Condensed Matter |
+| `physics:gr-qc` | General Relativity and Quantum Cosmology |
+| `physics:hep-ex` | High Energy Physics - Experiment |
+| `physics:hep-lat` | High Energy Physics - Lattice |
+| `physics:hep-ph` | High Energy Physics - Phenomenology |
+| `physics:hep-th` | High Energy Physics - Theory |
+| `physics:math-ph` | Mathematical Physics |
+| `physics:nlin` | Nonlinear Sciences |
+| `physics:nucl-ex` | Nuclear Experiment |
+| `physics:nucl-th` | Nuclear Theory |
+| `physics:physics` | Physics (Other) |
+| `physics:quant-ph` | Quantum Physics |
+| `q-bio` | Quantitative Biology |
+| `q-fin` | Quantitative Finance |
+| `stat` | Statistics |
+
+## Start History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Mahdisadjadi/arxivscraper&type=Date)](https://www.star-history.com/#Mahdisadjadi/arxivscraper&Date)
+
+```
+
+##### File: `arxivscraper-main/categories_v1.md`
+
+```markdown
+## Arxiv.org Categories
+Here is a list of all categories and subcategories available on ArXiv
+(the [script](https://gist.github.com/Mahdisadjadi/96970b043fcd94b8e5109fe8a7dbbd5e) to generate the table):
+
+| Category | Code |  Subcategories | Subcode |
+| --- | --- | --- | --- |
+| Astrophysics | `astro-ph` |
+| | | Astrophysics of Galaxies | `astro-ph.GA`
+| | | Cosmology and Nongalactic Astrophysics | `astro-ph.CO`
+| | | Earth and Planetary Astrophysics | `astro-ph.EP`
+| | | High Energy Astrophysical Phenomena | `astro-ph.HE`
+| | | Instrumentation and Methods for Astrophysics | `astro-ph.IM`
+| | | Solar and Stellar Astrophysics | `astro-ph.SR`
+| Condensed Matter | `cond-mat` |
+| | | Disordered Systems and Neural Networks | `cond-mat.dis-nn`
+| | | Materials Science | `cond-mat.mtrl-sci`
+| | | Mesoscale and Nanoscale Physics | `cond-mat.mes-hall`
+| | | Other Condensed Matter | `cond-mat.other`
+| | | Quantum Gases | `cond-mat.quant-gas`
+| | | Soft Condensed Matter | `cond-mat.soft`
+| | | Statistical Mechanics | `cond-mat.stat-mech`
+| | | Strongly Correlated Electrons | `cond-mat.str-el`
+| | | Superconductivity | `cond-mat.supr-con`
+| General Relativity and Quantum Cosmology | `gr-qc` |
+| High Energy Physics - Experiment | `hep-ex` |
+| High Energy Physics - Lattice | `hep-lat` |
+| High Energy Physics - Phenomenology | `hep-ph` |
+| High Energy Physics - Theory | `hep-th` |
+| Mathematical Physics | `math-ph` |
+| Nonlinear Sciences | `nlin` |
+| | | Adaptation and Self-Organizing Systems | `nlin.AO`
+| | | Cellular Automata and Lattice Gases | `nlin.CG`
+| | | Chaotic Dynamics | `nlin.CD`
+| | | Exactly Solvable and Integrable Systems | `nlin.SI`
+| | | Pattern Formation and Solitons | `nlin.PS`
+| Nuclear Experiment | `nucl-ex` |
+| Nuclear Theory | `nucl-th` |
+| Physics | `physics` |
+| | | Accelerator Physics | `physics.acc-ph`
+| | | Applied Physics | `physics.app-ph`
+| | | Atmospheric and Oceanic Physics | `physics.ao-ph`
+| | | Atomic Physics | `physics.atom-ph`
+| | | Atomic and Molecular Clusters | `physics.atm-clus`
+| | | Biological Physics | `physics.bio-ph`
+| | | Chemical Physics | `physics.chem-ph`
+| | | Classical Physics | `physics.class-ph`
+| | | Computational Physics | `physics.comp-ph`
+| | | Data Analysis, Statistics and Probability | `physics.data-an`
+| | | Fluid Dynamics | `physics.flu-dyn`
+| | | General Physics | `physics.gen-ph`
+| | | Geophysics | `physics.geo-ph`
+| | | History and Philosophy of Physics | `physics.hist-ph`
+| | | Instrumentation and Detectors | `physics.ins-det`
+| | | Medical Physics | `physics.med-ph`
+| | | Optics | `physics.optics`
+| | | Physics Education | `physics.ed-ph`
+| | | Physics and Society | `physics.soc-ph`
+| | | Plasma Physics | `physics.plasm-ph`
+| | | Popular Physics | `physics.pop-ph`
+| | | Space Physics | `physics.space-ph`
+| Quantum Physics | `quant-ph` |
+| Mathematics | `math` |
+| | | Algebraic Geometry | `math.AG`
+| | | Algebraic Topology | `math.AT`
+| | | Analysis of PDEs | `math.AP`
+| | | Category Theory | `math.CT`
+| | | Classical Analysis and ODEs | `math.CA`
+| | | Combinatorics | `math.CO`
+| | | Commutative Algebra | `math.AC`
+| | | Complex Variables | `math.CV`
+| | | Differential Geometry | `math.DG`
+| | | Dynamical Systems | `math.DS`
+| | | Functional Analysis | `math.FA`
+| | | General Mathematics | `math.GM`
+| | | General Topology | `math.GN`
+| | | Geometric Topology | `math.GT`
+| | | Group Theory | `math.GR`
+| | | History and Overview | `math.HO`
+| | | Information Theory | `math.IT`
+| | | K-Theory and Homology | `math.KT`
+| | | Logic | `math.LO`
+| | | Mathematical Physics | `math.MP`
+| | | Metric Geometry | `math.MG`
+| | | Number Theory | `math.NT`
+| | | Numerical Analysis | `math.NA`
+| | | Operator Algebras | `math.OA`
+| | | Optimization and Control | `math.OC`
+| | | Probability | `math.PR`
+| | | Quantum Algebra | `math.QA`
+| | | Representation Theory | `math.RT`
+| | | Rings and Algebras | `math.RA`
+| | | Spectral Theory | `math.SP`
+| | | Statistics Theory | `math.ST`
+| | | Symplectic Geometry | `math.SG`
+| Computing Research Repository | `CoRR` |
+| Quantitative Biology | `q-bio` |
+| | | Biomolecules | `q-bio.BM`
+| | | Cell Behavior | `q-bio.CB`
+| | | Genomics | `q-bio.GN`
+| | | Molecular Networks | `q-bio.MN`
+| | | Neurons and Cognition | `q-bio.NC`
+| | | Other Quantitative Biology | `q-bio.OT`
+| | | Populations and Evolution | `q-bio.PE`
+| | | Quantitative Methods | `q-bio.QM`
+| | | Subcellular Processes | `q-bio.SC`
+| | | Tissues and Organs | `q-bio.TO`
+| Quantitative Finance | `q-fin` |
+| | | Computational Finance | `q-fin.CP`
+| | | Economics | `q-fin.EC`
+| | | General Finance | `q-fin.GN`
+| | | Mathematical Finance | `q-fin.MF`
+| | | Portfolio Management | `q-fin.PM`
+| | | Pricing of Securities | `q-fin.PR`
+| | | Risk Management | `q-fin.RM`
+| | | Statistical Finance | `q-fin.ST`
+| | | Trading and Market Microstructure | `q-fin.TR`
+| Statistics | `stat` |
+| | | Applications | `stat.AP`
+| | | Computation | `stat.CO`
+| | | Machine Learning | `stat.ML`
+| | | Methodology | `stat.ME`
+| | | Other Statistics | `stat.OT`
+| | | Statistics Theory | `stat.TH`
+
+```
+
+##### File: `arxivscraper-main/categories_v2.md`
+
+```markdown
+## Arxiv.org Categories
+
+Here is a list of all categories and subcategories available on ArXiv. This is list is up to date 
+as of 2025-03-22 and is directly sourced from https://arxiv.org/category_taxonomy. 
+
+> Note: The [v1](categories_v1.md) of this file used python to find the list of categories back in 2017. For v2, I simply fed the html of the page to
+[Google AI Studio](aistudio.google.com) and used the following simple prompt to get the list. We have come a long way!
+
+```
+At the end of the prompt, I have provided a set of HTML tags that are arranged according to the following guide. Extract these keys and make a nice markdown table out of them.
+
+Classification guide
+Group Name
+Archive Name (Archive ID)
+omitted if group consists of a single archive with the same name as the group
+
+Category Name
+(Category ID)
+Category description if available
+
+[
+list of html tags
+...
+]
+```
+
+
+
+| Group Name | Archive Name (Archive ID) | Category Name (Category ID) | Category Description |
+|---|---|---|---|
+| Computer Science |  | Computer Science  |  |
+|  |  | cs.AI (Artificial Intelligence) | Covers all areas of AI except Vision, Robotics, Machine Learning, Multiagent Systems, and Computation and Language (Natural Language Processing), which have separate subject areas. In particular, includes Expert Systems, Theorem Proving (although this may overlap with Logic in Computer Science), Knowledge Representation, Planning, and Uncertainty in AI. Roughly includes material in ACM Subject Classes I.2.0, I.2.1, I.2.3, I.2.4, I.2.8, and I.2.11. |
+|  |  | cs.AR (Hardware Architecture) | Covers systems organization and hardware architecture. Roughly includes material in ACM Subject Classes C.0, C.1, and C.5. |
+|  |  | cs.CC (Computational Complexity) | Covers models of computation, complexity classes, structural complexity, complexity tradeoffs, upper and lower bounds. Roughly includes material in ACM Subject Classes F.1 (computation by abstract devices), F.2.3 (tradeoffs among complexity measures), and F.4.3 (formal languages), although some material in formal languages may be more appropriate for Logic in Computer Science. Some material in F.2.1 and F.2.2, may also be appropriate here, but is more likely to have Data Structures and Algorithms as the primary subject area. |
+|  |  | cs.CE (Computational Engineering, Finance, and Science) | Covers applications of computer science to the mathematical modeling of complex systems in the fields of science, engineering, and finance. Papers here are interdisciplinary and applications-oriented, focusing on techniques and tools that enable challenging computational simulations to be performed, for which the use of supercomputers or distributed computing platforms is often required. Includes material in ACM Subject Classes J.2, J.3, and J.4 (economics). |
+|  |  | cs.CG (Computational Geometry) | Roughly includes material in ACM Subject Classes I.3.5 and F.2.2. |
+|  |  | cs.CL (Computation and Language) | Covers natural language processing. Roughly includes material in ACM Subject Class I.2.7. Note that work on artificial languages (programming languages, logics, formal systems) that does not explicitly address natural-language issues broadly construed (natural-language processing, computational linguistics, speech, text retrieval, etc.) is not appropriate for this area. |
+|  |  | cs.CR (Cryptography and Security) | Covers all areas of cryptography and security including authentication, public key cryptosytems, proof-carrying code, etc. Roughly includes material in ACM Subject Classes D.4.6 and E.3. |
+|  |  | cs.CV (Computer Vision and Pattern Recognition) | Covers image processing, computer vision, pattern recognition, and scene understanding. Roughly includes material in ACM Subject Classes I.2.10, I.4, and I.5. |
+|  |  | cs.CY (Computers and Society) | Covers impact of computers on society, computer ethics, information technology and public policy, legal aspects of computing, computers and education. Roughly includes material in ACM Subject Classes K.0, K.2, K.3, K.4, K.5, and K.7. |
+|  |  | cs.DB (Databases) | Covers database management, datamining, and data processing. Roughly includes material in ACM Subject Classes E.2, E.5, H.0, H.2, and J.1. |
+|  |  | cs.DC (Distributed, Parallel, and Cluster Computing) | Covers fault-tolerance, distributed algorithms, stabilility, parallel computation, and cluster computing. Roughly includes material in ACM Subject Classes C.1.2, C.1.4, C.2.4, D.1.3, D.4.5, D.4.7, E.1. |
+|  |  | cs.DL (Digital Libraries) | Covers all aspects of the digital library design and document and text creation. Note that there will be some overlap with Information Retrieval (which is a separate subject area). Roughly includes material in ACM Subject Classes H.3.5, H.3.6, H.3.7, I.7. |
+|  |  | cs.DM (Discrete Mathematics) | Covers combinatorics, graph theory, applications of probability. Roughly includes material in ACM Subject Classes G.2 and G.3. |
+|  |  | cs.DS (Data Structures and Algorithms) | Covers data structures and analysis of algorithms. Roughly includes material in ACM Subject Classes E.1, E.2, F.2.1, and F.2.2. |
+|  |  | cs.ET (Emerging Technologies) | Covers approaches to information processing (computing, communication, sensing) and bio-chemical analysis based on alternatives to silicon CMOS-based technologies, such as nanoscale electronic, photonic, spin-based, superconducting, mechanical, bio-chemical and quantum technologies (this list is not exclusive). Topics of interest include (1) building blocks for emerging technologies, their scalability and adoption in larger systems, including integration with traditional technologies, (2) modeling, design and optimization of novel devices and systems, (3) models of computation, algorithm design and programming for emerging technologies. |
+|  |  | cs.FL (Formal Languages and Automata Theory) | Covers automata theory, formal language theory, grammars, and combinatorics on words. This roughly corresponds to ACM Subject Classes F.1.1, and F.4.3. Papers dealing with computational complexity should go to cs.CC; papers dealing with logic should go to cs.LO. |
+|  |  | cs.GL (General Literature) | Covers introductory material, survey material, predictions of future trends, biographies, and miscellaneous computer-science related material. Roughly includes all of ACM Subject Class A, except it does not include conference proceedings (which will be listed in the appropriate subject area). |
+|  |  | cs.GR (Graphics) | Covers all aspects of computer graphics. Roughly includes material in all of ACM Subject Class I.3, except that I.3.5 is is likely to have Computational Geometry as the primary subject area. |
+|  |  | cs.GT (Computer Science and Game Theory) | Covers all theoretical and applied aspects at the intersection of computer science and game theory, including work in mechanism design, learning in games (which may overlap with Learning), foundations of agent modeling in games (which may overlap with Multiagent systems), coordination, specification and formal methods for non-cooperative computational environments. The area also deals with applications of game theory to areas such as electronic commerce. |
+|  |  | cs.HC (Human-Computer Interaction) | Covers human factors, user interfaces, and collaborative computing. Roughly includes material in ACM Subject Classes H.1.2 and all of H.5, except for H.5.1, which is more likely to have Multimedia as the primary subject area. |
+|  |  | cs.IR (Information Retrieval) | Covers indexing, dictionaries, retrieval, content and analysis. Roughly includes material in ACM Subject Classes H.3.0, H.3.1, H.3.2, H.3.3, and H.3.4. |
+|  |  | cs.IT (Information Theory) | Covers theoretical and experimental aspects of information theory and coding. Includes material in ACM Subject Class E.4 and intersects with H.1.1. |
+|  |  | cs.LG (Machine Learning) | Papers on all aspects of machine learning research (supervised, unsupervised, reinforcement learning, bandit problems, and so on) including also robustness, explanation, fairness, and methodology. cs.LG is also an appropriate primary category for applications of machine learning methods. |
+|  |  | cs.LO (Logic in Computer Science) | Covers all aspects of logic in computer science, including finite model theory, logics of programs, modal logic, and program verification. Programming language semantics should have Programming Languages as the primary subject area. Roughly includes material in ACM Subject Classes D.2.4, F.3.1, F.4.0, F.4.1, and F.4.2; some material in F.4.3 (formal languages) may also be appropriate here, although Computational Complexity is typically the more appropriate subject area. |
+|  |  | cs.MA (Multiagent Systems) | Covers multiagent systems, distributed artificial intelligence, intelligent agents, coordinated interactions. and practical applications. Roughly covers ACM Subject Class I.2.11. |
+|  |  | cs.MM (Multimedia) | Roughly includes material in ACM Subject Class H.5.1. |
+|  |  | cs.MS (Mathematical Software) | Roughly includes material in ACM Subject Class G.4. |
+|  |  | cs.NA (Numerical Analysis) | cs.NA is an alias for math.NA. Roughly includes material in ACM Subject Class G.1. |
+|  |  | cs.NE (Neural and Evolutionary Computing) | Covers neural networks, connectionism, genetic algorithms, artificial life, adaptive behavior. Roughly includes some material in ACM Subject Class C.1.3, I.2.6, I.5. |
+|  |  | cs.NI (Networking and Internet Architecture) | Covers all aspects of computer communication networks, including network architecture and design, network protocols, and internetwork standards (like TCP/IP). Also includes topics, such as web caching, that are directly relevant to Internet architecture and performance. Roughly includes all of ACM Subject Class C.2 except C.2.4, which is more likely to have Distributed, Parallel, and Cluster Computing as the primary subject area. |
+|  |  | cs.OH (Other Computer Science) | This is the classification to use for documents that do not fit anywhere else. |
+|  |  | cs.OS (Operating Systems) | Roughly includes material in ACM Subject Classes D.4.1, D.4.2., D.4.3, D.4.4, D.4.5, D.4.7, and D.4.9. |
+|  |  | cs.PF (Performance) | Covers performance measurement and evaluation, queueing, and simulation. Roughly includes material in ACM Subject Classes D.4.8 and K.6.2. |
+|  |  | cs.PL (Programming Languages) | Covers programming language semantics, language features, programming approaches (such as object-oriented programming, functional programming, logic programming). Also includes material on compilers oriented towards programming languages; other material on compilers may be more appropriate in Architecture (AR). Roughly includes material in ACM Subject Classes D.1 and D.3. |
+|  |  | cs.RO (Robotics) | Roughly includes material in ACM Subject Class I.2.9. |
+|  |  | cs.SC (Symbolic Computation) | Roughly includes material in ACM Subject Class I.1. |
+|  |  | cs.SD (Sound) | Covers all aspects of computing with sound, and sound as an information channel. Includes models of sound, analysis and synthesis, audio user interfaces, sonification of data, computer music, and sound signal processing. Includes ACM Subject Class H.5.5, and intersects with H.1.2, H.5.1, H.5.2, I.2.7, I.5.4, I.6.3, J.5, K.4.2. |
+|  |  | cs.SE (Software Engineering) | Covers design tools, software metrics, testing and debugging, programming environments, etc. Roughly includes material in all of ACM Subject Classes D.2, except that D.2.4 (program verification) should probably have Logics in Computer Science as the primary subject area. |
+|  |  | cs.SI (Social and Information Networks) | Covers the design, analysis, and modeling of social and information networks, including their applications for on-line information access, communication, and interaction, and their roles as datasets in the exploration of questions in these and other domains, including connections to the social and biological sciences. Analysis and modeling of such networks includes topics in ACM Subject classes F.2, G.2, G.3, H.2, and I.2; applications in computing include topics in H.3, H.4, and H.5; and applications at the interface of computing and other disciplines include topics in J.1--J.7. Papers on computer communication systems and network protocols (e.g. TCP/IP) are generally a closer fit to the Networking and Internet Architecture (cs.NI) category. |
+|  |  | cs.SY (Systems and Control) | cs.SY is an alias for eess.SY. This section includes theoretical and experimental research covering all facets of automatic control systems. The section is focused on methods of control system analysis and design using tools of modeling, simulation and optimization. Specific areas of research include nonlinear, distributed, adaptive, stochastic and robust control in addition to hybrid and discrete event systems. Application areas include automotive and aerospace control systems, network control, biological systems, multiagent and cooperative control, robotics, reinforcement learning, sensor networks, control of cyber-physical and energy-related systems, and control of computing systems. |
+| Economics |  |  |  |
+|  |  | econ.EM (Econometrics) | Econometric Theory, Micro-Econometrics, Macro-Econometrics, Empirical Content of Economic Relations discovered via New Methods, Methodological Aspects of the Application of Statistical Inference to Economic Data. |
+|  |  | econ.GN (General Economics) | General methodological, applied, and empirical contributions to economics. |
+|  |  | econ.TH (Theoretical Economics) | Includes theoretical contributions to Contract Theory, Decision Theory, Game Theory, General Equilibrium, Growth, Learning and Evolution, Macroeconomics, Market and Mechanism Design, and Social Choice. |
+| Electrical Engineering and Systems Science |  |  |  |
+|  |  | eess.AS (Audio and Speech Processing) | Theory and methods for processing signals representing audio, speech, and language, and their applications. This includes analysis, synthesis, enhancement, transformation, classification and interpretation of such signals as well as the design, development, and evaluation of associated signal processing systems. Machine learning and pattern analysis applied to any of the above areas is also welcome.  Specific topics of interest include: auditory modeling and hearing aids; acoustic beamforming and source localization; classification of acoustic scenes; speaker separation; active noise control and echo cancellation; enhancement; de-reverberation; bioacoustics; music signals analysis, synthesis and modification; music information retrieval;  audio for multimedia and joint audio-video processing; spoken and written language modeling, segmentation, tagging, parsing, understanding, and translation; text mining; speech production, perception, and psychoacoustics; speech analysis, synthesis, and perceptual modeling and coding; robust speech recognition; speaker recognition and characterization; deep learning, online learning, and graphical models applied to speech, audio, and language signals; and implementation aspects ranging from system architecture to fast algorithms. |
+|  |  | eess.IV (Image and Video Processing) | Theory, algorithms, and architectures for the formation, capture, processing, communication, analysis, and display of images, video, and multidimensional signals in a wide variety of applications. Topics of interest include: mathematical, statistical, and perceptual image and video modeling and representation; linear and nonlinear filtering, de-blurring, enhancement, restoration, and reconstruction from degraded, low-resolution or tomographic data; lossless and lossy compression and coding; segmentation, alignment, and recognition; image rendering, visualization, and printing; computational imaging, including ultrasound, tomographic and magnetic resonance imaging; and image and video analysis, synthesis, storage, search and retrieval. |
+|  |  | eess.SP (Signal Processing) | Theory, algorithms, performance analysis and applications of signal and data analysis, including physical modeling, processing, detection and parameter estimation, learning, mining, retrieval, and information extraction. The term "signal" includes speech, audio, sonar, radar, geophysical, physiological, (bio-) medical, image, video, and multimodal natural and man-made signals, including communication signals and data. Topics of interest include: statistical signal processing, spectral estimation and system identification; filter design, adaptive filtering / stochastic learning; (compressive) sampling, sensing, and transform-domain methods including fast algorithms; signal processing for machine learning and machine learning for signal processing applications; in-network and graph signal processing; convex and nonconvex optimization methods for signal processing applications; radar, sonar, and sensor array beamforming and direction finding; communications signal processing; low power, multi-core and system-on-chip signal processing; sensing, communication, analysis and optimization for cyber-physical systems such as power grids and the Internet of Things. |
+|  |  | eess.SY (Systems and Control) | This section includes theoretical and experimental research covering all facets of automatic control systems. The section is focused on methods of control system analysis and design using tools of modeling, simulation and optimization. Specific areas of research include nonlinear, distributed, adaptive, stochastic and robust control in addition to hybrid and discrete event systems. Application areas include automotive and aerospace control systems, network control, biological systems, multiagent and cooperative control, robotics, reinforcement learning, sensor networks, control of cyber-physical and energy-related systems, and control of computing systems. |
+| Mathematics |  |  |  |
+|  |  | math.AC (Commutative Algebra) | Commutative rings, modules, ideals, homological algebra, computational aspects, invariant theory, connections to algebraic geometry and combinatorics |
+|  |  | math.AG (Algebraic Geometry) | Algebraic varieties, stacks, sheaves, schemes, moduli spaces, complex geometry, quantum cohomology |
+|  |  | math.AP (Analysis of PDEs) | Existence and uniqueness, boundary conditions, linear and non-linear operators, stability, soliton theory, integrable PDE's, conservation laws, qualitative dynamics |
+|  |  | math.AT (Algebraic Topology) | Homotopy theory, homological algebra, algebraic treatments of manifolds |
+|  |  | math.CA (Classical Analysis and ODEs) | Special functions, orthogonal polynomials, harmonic analysis, ODE's, differential relations, calculus of variations, approximations, expansions, asymptotics |
+|  |  | math.CO (Combinatorics) | Discrete mathematics, graph theory, enumeration, combinatorial optimization, Ramsey theory, combinatorial game theory |
+|  |  | math.CT (Category Theory) | Enriched categories, topoi, abelian categories, monoidal categories, homological algebra |
+|  |  | math.CV (Complex Variables) | Holomorphic functions, automorphic group actions and forms, pseudoconvexity, complex geometry, analytic spaces, analytic sheaves |
+|  |  | math.DG (Differential Geometry) | Complex, contact, Riemannian, pseudo-Riemannian and Finsler geometry, relativity, gauge theory, global analysis |
+|  |  | math.DS (Dynamical Systems) | Dynamics of differential equations and flows, mechanics, classical few-body problems, iterations, complex dynamics, delayed differential equations |
+|  |  | math.FA (Functional Analysis) | Banach spaces, function spaces, real functions, integral transforms, theory of distributions, measure theory |
+|  |  | math.GM (General Mathematics) | Mathematical material of general interest, topics not covered elsewhere |
+|  |  | math.GN (General Topology) | Continuum theory, point-set topology, spaces with algebraic structure, foundations, dimension theory, local and global properties |
+|  |  | math.GR (Group Theory) | Finite groups, topological groups, representation theory, cohomology, classification and structure |
+|  |  | math.GT (Geometric Topology) | Manifolds, orbifolds, polyhedra, cell complexes, foliations, geometric structures |
+|  |  | math.HO (History and Overview) | Biographies, philosophy of mathematics, mathematics education, recreational mathematics, communication of mathematics, ethics in mathematics |
+|  |  | math.IT (Information Theory) | math.IT is an alias for cs.IT. Covers theoretical and experimental aspects of information theory and coding. |
+|  |  | math.KT (K-Theory and Homology) | Algebraic and topological K-theory, relations with topology, commutative algebra, and operator algebras |
+|  |  | math.LO (Logic) | Logic, set theory, point-set topology, formal mathematics |
+|  |  | math.MG (Metric Geometry) | Euclidean, hyperbolic, discrete, convex, coarse geometry, comparisons in Riemannian geometry, symmetric spaces |
+|  |  | math.MP (Mathematical Physics) | math.MP is an alias for math-ph. Articles in this category focus on areas of research that illustrate the application of mathematics to problems in physics, develop mathematical methods for such applications, or provide mathematically rigorous formulations of existing physical theories. Submissions to math-ph should be of interest to both physically oriented mathematicians and mathematically oriented physicists; submissions which are primarily of interest to theoretical physicists or to mathematicians should probably be directed to the respective physics/math categories |
+|  |  | math.NA (Numerical Analysis) | Numerical algorithms for problems in analysis and algebra, scientific computation |
+|  |  | math.NT (Number Theory) | Prime numbers, diophantine equations, analytic number theory, algebraic number theory, arithmetic geometry, Galois theory |
+|  |  | math.OA (Operator Algebras) | Algebras of operators on Hilbert space, C^*-algebras, von Neumann algebras, non-commutative geometry |
+|  |  | math.OC (Optimization and Control) | Operations research, linear programming, control theory, systems theory, optimal control, game theory |
+|  |  | math.PR (Probability) | Theory and applications of probability and stochastic processes: e.g. central limit theorems, large deviations, stochastic differential equations, models from statistical mechanics, queuing theory |
+|  |  | math.QA (Quantum Algebra) | Quantum groups, skein theories, operadic and diagrammatic algebra, quantum field theory |
+|  |  | math.RA (Rings and Algebras) | Non-commutative rings and algebras, non-associative algebras, universal algebra and lattice theory, linear algebra, semigroups |
+|  |  | math.RT (Representation Theory) | Linear representations of algebras and groups, Lie theory, associative algebras, multilinear algebra |
+|  |  | math.SG (Symplectic Geometry) | Hamiltonian systems, symplectic flows, classical integrable systems |
+|  |  | math.SP (Spectral Theory) | Schrodinger operators, operators on manifolds, general differential operators, numerical studies, integral operators, discrete models, resonances, non-self-adjoint operators, random operators/matrices |
+|  |  | math.ST (Statistics Theory) | Applied, computational and theoretical statistics: e.g. statistical inference, regression, time series, multivariate analysis, data analysis, Markov chain Monte Carlo, design of experiments, case studies |
+| Physics |  |  |  |
+|  | astro-ph (Astrophysics) |  |  |
+|  |  | astro-ph.CO (Cosmology and Nongalactic Astrophysics) | Phenomenology of early universe, cosmic microwave background, cosmological parameters, primordial element abundances, extragalactic distance scale, large-scale structure of the universe. Groups, superclusters, voids, intergalactic medium. Particle astrophysics: dark energy, dark matter, baryogenesis, leptogenesis, inflationary models, reheating, monopoles, WIMPs, cosmic strings, primordial black holes, cosmological gravitational radiation |
+|  |  | astro-ph.EP (Earth and Planetary Astrophysics) | Interplanetary medium, planetary physics, planetary astrobiology, extrasolar planets, comets, asteroids, meteorites. Structure and formation of the solar system |
+|  |  | astro-ph.GA (Astrophysics of Galaxies) | Phenomena pertaining to galaxies or the Milky Way. Star clusters, HII regions and planetary nebulae, the interstellar medium, atomic and molecular clouds, dust. Stellar populations. Galactic structure, formation, dynamics. Galactic nuclei, bulges, disks, halo. Active Galactic Nuclei, supermassive black holes, quasars. Gravitational lens systems. The Milky Way and its contents |
+|  |  | astro-ph.HE (High Energy Astrophysical Phenomena) | Cosmic ray production, acceleration, propagation, detection. Gamma ray astronomy and bursts, X-rays, charged particles, supernovae and other explosive phenomena, stellar remnants and accretion systems, jets, microquasars, neutron stars, pulsars, black holes |
+|  |  | astro-ph.IM (Instrumentation and Methods for Astrophysics) | Detector and telescope design, experiment proposals. Laboratory Astrophysics. Methods for data analysis, statistical methods. Software, database design |
+|  |  | astro-ph.SR (Solar and Stellar Astrophysics) | White dwarfs, brown dwarfs, cataclysmic variables. Star formation and protostellar systems, stellar astrobiology, binary and multiple systems of stars, stellar evolution and structure, coronas. Central stars of planetary nebulae. Helioseismology, solar neutrinos, production and detection of gravitational radiation from stellar systems |
+|  | cond-mat (Condensed Matter) |  |  |
+|  |  | cond-mat.dis-nn (Disordered Systems and Neural Networks) | Glasses and spin glasses; properties of random, aperiodic and quasiperiodic systems; transport in disordered media; localization; phenomena mediated by defects and disorder; neural networks |
+|  |  | cond-mat.mes-hall (Mesoscale and Nanoscale Physics) | Semiconducting nanostructures: quantum dots, wires, and wells. Single electronics, spintronics, 2d electron gases, quantum Hall effect, nanotubes, graphene, plasmonic nanostructures |
+|  |  | cond-mat.mtrl-sci (Materials Science) | Techniques, synthesis, characterization, structure.  Structural phase transitions, mechanical properties, phonons. Defects, adsorbates, interfaces |
+|  |  | cond-mat.other (Other Condensed Matter) | Work in condensed matter that does not fit into the other cond-mat classifications |
+|  |  | cond-mat.quant-gas (Quantum Gases) | Ultracold atomic and molecular gases, Bose-Einstein condensation, Feshbach resonances, spinor condensates, optical lattices, quantum simulation with cold atoms and molecules, macroscopic interference phenomena |
+|  |  | cond-mat.soft (Soft Condensed Matter) | Membranes, polymers, liquid crystals, glasses, colloids, granular matter |
+|  |  | cond-mat.stat-mech (Statistical Mechanics) | Phase transitions, thermodynamics, field theory, non-equilibrium phenomena, renormalization group and scaling, integrable models, turbulence |
+|  |  | cond-mat.str-el (Strongly Correlated Electrons) | Quantum magnetism, non-Fermi liquids, spin liquids, quantum criticality, charge density waves, metal-insulator transitions |
+|  |  | cond-mat.supr-con (Superconductivity) | Superconductivity: theory, models, experiment.  Superflow in helium |
+|  | gr-qc (General Relativity and Quantum Cosmology) |  | General Relativity and Quantum Cosmology Areas of gravitational physics, including experiments and observations related to the detection and interpretation of gravitational waves, experimental tests of gravitational theories, computational general relativity, relativistic astrophysics, solutions to Einstein's equations and their properties, alternative theories of gravity, classical and quantum cosmology, and quantum gravity. |
+|  | hep-ex (High Energy Physics - Experiment) |  | Results from high-energy/particle physics experiments and prospects for future experimental results, including tests of the standard model, measurements of standard model parameters, searches for physics beyond the standard model, and astroparticle physics experimental results. Does not include: detectors and instrumentation nor analysis methods to conduct experiments. |
+|  | hep-lat (High Energy Physics - Lattice) |  | Lattice field theory. Phenomenology from lattice field theory. Algorithms for lattice field theory.  Hardware for lattice field theory. |
+|  | hep-ph (High Energy Physics - Phenomenology) |  | Theoretical particle physics and its interrelation with experiment. Prediction of particle physics observables: models, effective field theories, calculation techniques. Particle physics: analysis of theory through experimental results. |
+|  | hep-th (High Energy Physics - Theory) |  | Formal aspects of quantum field theory. String theory, supersymmetry and supergravity. |
+|  | math-ph (Mathematical Physics) |  | Articles in this category focus on areas of research that illustrate the application of mathematics to problems in physics, develop mathematical methods for such applications, or provide mathematically rigorous formulations of existing physical theories. Submissions to math-ph should be of interest to both physically oriented mathematicians and mathematically oriented physicists; submissions which are primarily of interest to theoretical physicists or to mathematicians should probably be directed to the respective physics/math categories |
+|  | nlin (Nonlinear Sciences) |  |  |
+|  |  | nlin.AO (Adaptation and Self-Organizing Systems) | Adaptation, self-organizing systems, statistical physics, fluctuating systems, stochastic processes, interacting particle systems, machine learning |
+|  |  | nlin.CD (Chaotic Dynamics) | Dynamical systems, chaos, quantum chaos, topological dynamics, cycle expansions, turbulence, propagation |
+|  |  | nlin.CG (Cellular Automata and Lattice Gases) | Computational methods, time series analysis, signal processing, wavelets, lattice gases |
+|  |  | nlin.PS (Pattern Formation and Solitons) | Pattern formation, coherent structures, solitons |
+|  |  | nlin.SI (Exactly Solvable and Integrable Systems) | Exactly solvable systems, integrable PDEs, integrable ODEs, Painleve analysis, integrable discrete maps, solvable lattice models, integrable quantum systems |
+|  | nucl-ex (Nuclear Experiment) |  | Nuclear Experiment Results from experimental nuclear physics including the areas of fundamental interactions, measurements at low- and medium-energy, as well as relativistic heavy-ion collisions.  Does not include: detectors and instrumentation nor analysis methods to conduct experiments; descriptions of experimental programs (present or future); comments on published results |
+|  | nucl-th (Nuclear Theory) |  | Nuclear Theory Theory of nuclear structure covering wide area from models of hadron structure to neutron stars. Nuclear equation of states at different external conditions. Theory of nuclear reactions including heavy-ion reactions at low and high energies. It does not include problems of data analysis, physics of nuclear reactors, problems of safety, reactor construction |
+|  | physics (Physics) |  |  |
+|  |  | physics.acc-ph (Accelerator Physics) | Accelerator theory and simulation. Accelerator technology. Accelerator experiments. Beam Physics. Accelerator design and optimization. Advanced accelerator concepts. Radiation sources including synchrotron light sources and free electron lasers. Applications of accelerators. |
+|  |  | physics.ao-ph (Atmospheric and Oceanic Physics) | Atmospheric and oceanic physics and physical chemistry, biogeophysics, and climate science |
+|  |  | physics.app-ph (Applied Physics) | Applications of physics to new technology, including electronic devices, optics, photonics, microwaves, spintronics, advanced materials, metamaterials, nanotechnology, and energy sciences. |
+|  |  | physics.atm-clus (Atomic and Molecular Clusters) | Atomic and molecular clusters, nanoparticles: geometric, electronic, optical, chemical, magnetic properties, shell structure, phase transitions, optical spectroscopy, mass spectrometry, photoelectron spectroscopy, ionization potential, electron affinity, interaction with intense light pulses, electron diffraction, light scattering, ab initio calculations, DFT theory, fragmentation, Coulomb explosion, hydrodynamic expansion. |
+|  |  | physics.atom-ph (Atomic Physics) | Atomic and molecular structure, spectra, collisions, and data. Atoms and molecules in external fields. Molecular dynamics and coherent and optical control. Cold atoms and molecules. Cold collisions. Optical lattices. |
+|  |  | physics.bio-ph (Biological Physics) | Molecular biophysics, cellular biophysics, neurological biophysics, membrane biophysics, single-molecule biophysics, ecological biophysics, quantum phenomena in biological systems (quantum biophysics), theoretical biophysics, molecular dynamics/modeling and simulation, game theory, biomechanics, bioinformatics, microorganisms, virology, evolution, biophysical methods. |
+|  |  | physics.chem-ph (Chemical Physics) | Experimental, computational, and theoretical physics of atoms, molecules, and clusters - Classical and quantum description of states, processes, and dynamics; spectroscopy, electronic structure, conformations, reactions, interactions, and phases. Chemical thermodynamics. Disperse systems. High pressure chemistry. Solid state chemistry. Surface and interface chemistry. |
+|  |  | physics.class-ph (Classical Physics) | Newtonian and relativistic dynamics; many particle systems; planetary motions; chaos in classical dynamics. Maxwell's  equations and  dynamics of charged systems and  electromagnetic forces in materials. Vibrating systems such as membranes and cantilevers; optomechanics. Classical waves, including acoustics and elasticity; physics of music and musical instruments. Classical thermodynamics and  heat flow problems. |
+|  |  | physics.comp-ph (Computational Physics) | All aspects of computational science applied to physics. |
+|  |  | physics.data-an (Data Analysis, Statistics and Probability) | Methods, software and hardware for physics data analysis: data processing and storage; measurement methodology; statistical and mathematical aspects such as parametrization and uncertainties. |
+|  |  | physics.ed-ph (Physics Education) | Report of results of a research study, laboratory experience, assessment or classroom practice that represents a way to improve teaching and learning in physics. Also, report on misconceptions of students, textbook errors, and other similar information relative to promoting physics understanding. |
+|  |  | physics.flu-dyn (Fluid Dynamics) | Turbulence, instabilities, incompressible/compressible flows, reacting flows. Aero/hydrodynamics, fluid-structure interactions, acoustics. Biological fluid dynamics, micro/nanofluidics, interfacial phenomena. Complex fluids, suspensions and granular flows, porous media flows. Geophysical flows, thermoconvective and stratified flows. Mathematical and computational methods for fluid dynamics, fluid flow models, experimental techniques. |
+|  |  | physics.gen-ph (General Physics) | Description coming soon |
+|  |  | physics.geo-ph (Geophysics) | Atmospheric physics. Biogeosciences. Computational geophysics. Geographic location. Geoinformatics. Geophysical techniques. Hydrospheric geophysics. Magnetospheric physics. Mathematical geophysics. Planetology. Solar system. Solid earth geophysics. Space plasma physics. Mineral physics. High pressure physics. |
+|  |  | physics.hist-ph (History and Philosophy of Physics) | History and philosophy of all branches of physics, astrophysics, and cosmology, including appreciations of physicists. |
+|  |  | physics.ins-det (Instrumentation and Detectors) | Instrumentation and Detectors for research in natural science, including optical, molecular, atomic, nuclear and particle physics instrumentation and the associated electronics, services, infrastructure and control equipment.  |
+|  |  | physics.med-ph (Medical Physics) | Radiation therapy. Radiation dosimetry. Biomedical imaging modelling.  Reconstruction, processing, and analysis. Biomedical system modelling and analysis. Health physics. New imaging or therapy modalities. |
+|  |  | physics.optics (Optics) | Adaptive optics. Astronomical optics. Atmospheric optics. Biomedical optics. Cardinal points. Collimation. Doppler effect. Fiber optics. Fourier optics. Geometrical optics (Gradient index optics. Holography. Infrared optics. Integrated optics. Laser applications. Laser optical systems. Lasers. Light amplification. Light diffraction. Luminescence. Microoptics. Nano optics. Ocean optics. Optical computing. Optical devices. Optical imaging. Optical materials. Optical metrology. Optical microscopy. Optical properties. Optical signal processing. Optical testing techniques. Optical wave propagation. Paraxial optics. Photoabsorption. Photoexcitations. Physical optics. Physiological optics. Quantum optics. Segmented optics. Spectra. Statistical optics. Surface optics. Ultrafast optics. Wave optics. X-ray optics. |
+|  |  | physics.plasm-ph (Plasma Physics) | Fundamental plasma physics. Magnetically Confined Plasmas (includes magnetic fusion energy research). High Energy Density Plasmas (inertial confinement plasmas, laser-plasma interactions). Ionospheric, Heliophysical, and Astrophysical plasmas (includes sun and solar system plasmas). Lasers, Accelerators, and Radiation Generation. Low temperature plasmas and plasma applications (include dusty plasmas, semiconductor etching, plasma-based nanotechnology, medical applications). Plasma Diagnostics, Engineering and Enabling Technologies (includes fusion reactor design, heating systems, diagnostics, experimental techniques) |
+|  |  | physics.pop-ph (Popular Physics) | Description coming soon |
+|  |  | physics.soc-ph (Physics and Society) | Structure, dynamics and collective behavior of societies and groups (human or otherwise). Quantitative analysis of social networks and other complex networks. Physics and engineering of infrastructure and systems of broad societal impact (e.g., energy grids, transportation networks). |
+|  |  | physics.space-ph (Space Physics) | Space plasma physics. Heliophysics. Space weather. Planetary magnetospheres, ionospheres and magnetotail. Auroras. Interplanetary space. Cosmic rays. Synchrotron radiation. Radio astronomy. |
+|  | quant-ph (Quantum Physics) |  | Description coming soon |
+| Quantitative Biology |  |  |  |
+|  |  | q-bio.BM (Biomolecules) | DNA, RNA, proteins, lipids, etc.; molecular structures and folding kinetics; molecular interactions; single-molecule manipulation. |
+|  |  | q-bio.CB (Cell Behavior) | Cell-cell signaling and interaction; morphogenesis and development; apoptosis; bacterial conjugation; viral-host interaction; immunology |
+|  |  | q-bio.GN (Genomics) | DNA sequencing and assembly; gene and motif finding; RNA editing and alternative splicing; genomic structure and processes (replication, transcription, methylation, etc); mutational processes. |
+|  |  | q-bio.MN (Molecular Networks) | Gene regulation, signal transduction, proteomics, metabolomics, gene and enzymatic networks |
+|  |  | q-bio.NC (Neurons and Cognition) | Synapse, cortex, neuronal dynamics, neural network, sensorimotor control, behavior, attention |
+|  |  | q-bio.OT (Other Quantitative Biology) | Work in quantitative biology that does not fit into the other q-bio classifications |
+|  |  | q-bio.PE (Populations and Evolution) | Population dynamics, spatio-temporal and epidemiological models, dynamic speciation, co-evolution, biodiversity, foodwebs, aging; molecular evolution and phylogeny; directed evolution; origin of life |
+|  |  | q-bio.QM (Quantitative Methods) | All experimental, numerical, statistical and mathematical contributions of value to biology |
+|  |  | q-bio.SC (Subcellular Processes) | Assembly and control of subcellular structures (channels, organelles, cytoskeletons, capsules, etc.); molecular motors, transport, subcellular localization; mitosis and meiosis |
+|  |  | q-bio.TO (Tissues and Organs) | Blood flow in vessels, biomechanics of bones, electrical waves, endocrine system, tumor growth |
+| Quantitative Finance |  |  |  |
+|  |  | q-fin.CP (Computational Finance) | Computational methods, including Monte Carlo, PDE, lattice and other numerical methods with applications to financial modeling |
+|  |  | q-fin.EC (Economics) | q-fin.EC is an alias for econ.GN. Economics, including micro and macro economics, international economics, theory of the firm, labor economics, and other economic topics outside finance |
+|  |  | q-fin.GN (General Finance) | Development of general quantitative methodologies with applications in finance |
+|  |  | q-fin.MF (Mathematical Finance) | Mathematical and analytical methods of finance, including stochastic, probabilistic and functional analysis, algebraic, geometric and other methods |
+|  |  | q-fin.PM (Portfolio Management) | Security selection and optimization, capital allocation, investment strategies and performance measurement |
+|  |  | q-fin.PR (Pricing of Securities) | Valuation and hedging of financial securities, their derivatives, and structured products |
+|  |  | q-fin.RM (Risk Management) | Measurement and management of financial risks in trading, banking, insurance, corporate and other applications |
+|  |  | q-fin.ST (Statistical Finance) | Statistical, econometric and econophysics analyses with applications to financial markets and economic data |
+|  |  | q-fin.TR (Trading and Market Microstructure) | Market microstructure, liquidity, exchange and auction design, automated trading, agent-based modeling and market-making |
+| Statistics |  |  |  |
+|  |  | stat.AP (Applications) | Biology, Education, Epidemiology, Engineering, Environmental Sciences, Medical, Physical Sciences, Quality Control, Social Sciences |
+|  |  | stat.CO (Computation) | Algorithms, Simulation, Visualization |
+|  |  | stat.ME (Methodology) | Design, Surveys, Model Selection, Multiple Testing, Multivariate Methods, Signal and Image Processing, Time Series, Smoothing, Spatial Statistics, Survival Analysis, Nonparametric and Semiparametric Methods |
+|  |  | stat.ML (Machine Learning) | Covers machine learning papers (supervised, unsupervised, semi-supervised learning, graphical models, reinforcement learning, bandits, high dimensional inference, etc.) with a statistical or theoretical grounding |
+|  |  | stat.OT (Other Statistics) | Work in statistics that does not fit into the other stat classifications |
+|  |  | stat.TH (Statistics Theory) | stat.TH is an alias for math.ST. Asymptotics, Bayesian Inference, Decision Theory, Estimation, Foundations, Inference, Testing. |
+```
+
+##### File: `arxivscraper-main/pyproject.toml`
+
+```toml
+[project]
+name = "arxivscraper"
+version = "0.0.5"
+authors = [
+    { name = "mahdisadjadi", email = "sadjadi.seyedmahdi@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pip>=25.1.1",
+    "pytest>=8.4.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+```
+
+##### File: `arxivscraper-main/setup.py`
+
+```python
+"""\
+Provides a python package to get data of academic papers
+posted at arXiv.org in a specific date range and category.
+
+Collected data:
+
+        Title,
+        ID,
+        Authors,
+        Abstract,
+        Subcategories,
+        DOI,
+        Created (date),
+        Updated (date)
+"""
+
+import sys
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    sys.exit("""Error: Setuptools is required for installation.
+ -> http://pypi.python.org/pypi/setuptools""")
+
+setup(
+    name = "arxivscraper",
+    version = "0.0.5",
+    description = "Get arXiv.org metadate within a date range and category",
+    author = "Mahdi Sadjadi",
+    author_email = "sadjadi.seyedmahdi@gmail.com",
+    url = "https://github.com/Mahdisadjadi/arxivscraper",
+    download_url = 'https://github.com/Mahdisadjadi/arxivscraper/archive/0.0.2.tar.gz',
+    py_modules = [""],
+    packages=find_packages(),
+    keywords = ["arxiv", "scraper", "api", "citation"],
+    license = "MIT",
+    classifiers = [
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Science/Research",
+        "Topic :: Text Processing :: Markup :: LaTeX",
+        ],
+)
+
+```
+
+##### File: `arxivscraper-main/todo.md`
+
+```markdown
+## To-do list (code)
+
+* Add command line option to run
+* Add functions to filter out the results of API calls based on subcategories
+or title/abstract containing specific terms.
+
+
+## To-do list (documentation)
+On command line
+`python arxivscraper.py [-c|categories] [-f|from] [-u|until] [-w|waitingtime]`
+
+* `-c`: No default value
+* `-f`: Default first day of the current month
+* `-u`: Default today
+* `-w`: Default: 30 sec
+`python arxivscraper.py -c physics -f 2017-06-01 -u 2017-06-06`
+
+Note that the date is in `YYYY-MM-DD` format.
+
+At each `API` call, only 1000 records are returned. The scripts waits 30 seconds to make the next call. You can change the waiting time (in seconds) between calls by `-w` flag. Example:
+
+`python arxivscraper.py -c physics -f 2017-06-01 -u 2017-06-06 -w 20`
+
+* The retrieved results also include records updated during the date range even if there created out of this range.
+* to access help, `-h`
+* To list all categories: to see a list of categories, see [here]().
+
+```
+
+#### Directory: `arxivscraper-main/arxivscraper`
+
+##### File: `arxivscraper-main/arxivscraper/__init__.py`
+
+```python
+from .arxivscraper import *
+
+```
+
+##### File: `arxivscraper-main/arxivscraper/arxivscraper.py`
+
+```python
+"""
+A python program to retreive recrods from ArXiv.org in given
+categories and specific date range.
+
+Author: Mahdi Sadjadi (sadjadi.seyedmahdi[AT]gmail[DOT]com).
+"""
+
+from __future__ import print_function
+
+import datetime
+import sys
+import time
+import xml.etree.ElementTree as ET
+from typing import Dict, List
+
+PYTHON3 = sys.version_info[0] == 3
+if PYTHON3:
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
+    from urllib.request import urlopen
+else:
+    from urllib import urlencode
+    from urllib2 import HTTPError, urlopen
+
+from .constants import ARXIV, BASE, OAI
+
+
+class Record(object):
+    """
+    A class to hold a single record from ArXiv
+    Each records contains the following properties:
+
+    object should be of xml.etree.ElementTree.Element.
+    """
+
+    def __init__(self, xml_record):
+        """if not isinstance(object,ET.Element):
+        raise TypeError("")"""
+        self.xml = xml_record
+        self.id = self._get_text(ARXIV, "id")
+        self.url = "https://arxiv.org/abs/" + self.id
+        self.title = self._get_text(ARXIV, "title")
+        self.abstract = self._get_text(ARXIV, "abstract")
+        self.cats = self._get_text(ARXIV, "categories")
+        self.created = self._get_text(ARXIV, "created")
+        self.updated = self._get_text(ARXIV, "updated")
+        self.doi = self._get_text(ARXIV, "doi")
+        self.authors = self._get_authors()
+        self.affiliation = self._get_affiliation()
+
+    def _get_text(self, namespace: str, tag: str) -> str:
+        """Extracts text from an xml field"""
+        try:
+            return (
+                self.xml.find(namespace + tag).text.strip().lower().replace("\n", " ")
+            )
+        except:
+            return ""
+
+    def _get_name(self, parent, attribute) -> str:
+        """Extracts author name from an xml field"""
+        try:
+            return parent.find(ARXIV + attribute).text.lower()
+        except:
+            return "n/a"
+
+    def _get_authors(self) -> List:
+        """Extract name of authors"""
+        authors_xml = self.xml.findall(ARXIV + "authors/" + ARXIV + "author")
+        last_names = [self._get_name(author, "keyname") for author in authors_xml]
+        first_names = [self._get_name(author, "forenames") for author in authors_xml]
+        full_names = [a + " " + b for a, b in zip(first_names, last_names)]
+        return full_names
+
+    def _get_affiliation(self) -> str:
+        """Extract affiliation of authors"""
+        authors = self.xml.findall(ARXIV + "authors/" + ARXIV + "author")
+        try:
+            affiliation = [
+                author.find(ARXIV + "affiliation").text.lower() for author in authors
+            ]
+            return affiliation
+        except:
+            return []
+
+    def output(self) -> Dict:
+        """Data for each paper record"""
+        d = {
+            "title": self.title,
+            "id": self.id,
+            "abstract": self.abstract,
+            "categories": self.cats,
+            "doi": self.doi,
+            "created": self.created,
+            "updated": self.updated,
+            "authors": self.authors,
+            "affiliation": self.affiliation,
+            "url": self.url,
+        }
+        return d
+
+
+class Scraper(object):
+    """
+    A class to hold info about attributes of scraping,
+    such as date range, categories, and number of returned
+    records. If `from` is not provided, the first day of
+    the current month will be used. If `until` is not provided,
+    the current day will be used.
+
+    Parameters
+    ---------
+    category: str
+        The category of scraped records
+    data_from: str
+        starting date in format 'YYYY-MM-DD'. Updated eprints are included even if
+        they were created outside of the given date range. Default: first day of current month.
+    date_until: str
+        final date in format 'YYYY-MM-DD'. Updated eprints are included even if
+        they were created outside of the given date range. Default: today.
+    t: int
+        Waiting time between subsequent calls to API, triggred by Error 503.
+    timeout: int
+        Timeout in seconds after which the scraping stops. Default: 300s
+    filter: dictionary
+        A dictionary where keys are used to limit the saved results. Possible keys:
+        subcats, author, title, abstract. See the example, below.
+
+    Example:
+    Returning all eprints from `stat` category:
+
+    ```
+        import arxivscraper.arxivscraper as ax
+        scraper = ax.Scraper(category='stat',date_from='2017-12-23',date_until='2017-12-25',t=10,
+                 filters={'affiliation':['facebook'],'abstract':['learning']})
+        output = scraper.scrape()
+    ```
+    """
+
+    def __init__(
+        self,
+        category: str,
+        date_from: str = None,
+        date_until: str = None,
+        t: int = 30,
+        timeout: int = 300,
+        filters: Dict[str, str] = {},
+    ):
+        self.cat = str(category)
+        self.t = t
+        self.timeout = timeout
+        DateToday = datetime.date.today()
+        if date_from is None:
+            self.f = str(DateToday.replace(day=1))
+        else:
+            self.f = date_from
+        if date_until is None:
+            self.u = str(DateToday)
+        else:
+            self.u = date_until
+        self.url = (
+            BASE
+            + "from="
+            + self.f
+            + "&until="
+            + self.u
+            + "&metadataPrefix=arXiv&set=%s" % self.cat
+        )
+        self.filters = filters
+        if not self.filters:
+            self.append_all = True
+        else:
+            self.append_all = False
+            self.keys = filters.keys()
+
+    def scrape(self) -> List[Dict]:
+        t0 = time.time()
+        tx = time.time()
+        elapsed = 0.0
+        url = self.url
+        ds = []
+        k = 1
+        while True:
+
+            print("fetching up to ", 1000 * k, "records...")
+            try:
+                response = urlopen(url)
+            except HTTPError as e:
+                if e.code == 503:
+                    to = int(e.hdrs.get("retry-after", 30))
+                    print("Got 503. Retrying after {0:d} seconds.".format(self.t))
+                    time.sleep(self.t)
+                    continue
+                else:
+                    raise
+            k += 1
+            xml = response.read()
+            root = ET.fromstring(xml)
+            records = root.findall(OAI + "ListRecords/" + OAI + "record")
+            for record in records:
+                meta = record.find(OAI + "metadata").find(ARXIV + "arXiv")
+                record = Record(meta).output()
+                if self.append_all:
+                    ds.append(record)
+                else:
+                    save_record = False
+                    for key in self.keys:
+                        for word in self.filters[key]:
+                            if word.lower() in record[key]:
+                                save_record = True
+
+                    if save_record:
+                        ds.append(record)
+
+            try:
+                token = root.find(OAI + "ListRecords").find(OAI + "resumptionToken")
+            except:
+                return 1
+            if token is None or token.text is None:
+                break
+            else:
+                url = BASE + "resumptionToken=%s" % token.text
+
+            ty = time.time()
+            elapsed += ty - tx
+            if elapsed >= self.timeout:
+                break
+            else:
+                tx = time.time()
+
+        t1 = time.time()
+        print("fetching is completed in {0:.1f} seconds.".format(t1 - t0))
+        print("Total number of records {:d}".format(len(ds)))
+        return ds
+
+
+def search_all(df, col, *words):
+    """
+    Return a sub-DataFrame of those rows whose Name column match all the words.
+    source: https://stackoverflow.com/a/22624079/3349443
+    """
+    import numpy as np
+
+    return df[np.logical_and.reduce([df[col].str.contains(word) for word in words])]
+
+```
+
+##### File: `arxivscraper-main/arxivscraper/constants.py`
+
+```python
+OAI = "{http://www.openarchives.org/OAI/2.0/}"
+ARXIV = "{http://arxiv.org/OAI/arXiv/}"
+BASE = "http://export.arxiv.org/oai2?verb=ListRecords&"
+
+
+# catgories
+cats = [
+    "astro-ph",
+    "cond-mat",
+    "gr-qc",
+    "hep-ex",
+    "hep-lat",
+    "hep-ph",
+    "hep-th",
+    "math-ph",
+    "nlin",
+    "nucl-ex",
+    "nucl-th",
+    "physics",
+    "quant-ph",
+    "math",
+    "CoRR",
+    "q-bio",
+    "q-fin",
+    "stat",
+]
+subcats = {
+    "cond-mat": [
+        "cond-mat.dis-nn",
+        "cond-mat.mtrl-sci",
+        "cond-mat.mes-hall",
+        "cond-mat.other",
+        "cond-mat.quant-gas",
+        "cond-mat.soft",
+        "cond-mat.stat-mech",
+        "cond-mat.str-el",
+        "cond-mat.supr-con",
+    ],
+    "hep-th": [],
+    "hep-ex": [],
+    "hep-ph": [],
+    "gr-qc": [],
+    "quant-ph": [],
+    "q-fin": [
+        "q-fin.CP",
+        "q-fin.EC",
+        "q-fin.GN",
+        "q-fin.MF",
+        "q-fin.PM",
+        "q-fin.PR",
+        "q-fin.RM",
+        "q-fin.ST",
+        "q-fin.TR",
+    ],
+    "nucl-ex": [],
+    "CoRR": [],
+    "nlin": ["nlin.AO", "nlin.CG", "nlin.CD", "nlin.SI", "nlin.PS"],
+    "physics": [
+        "physics.acc-ph",
+        "physics.app-ph",
+        "physics.ao-ph",
+        "physics.atom-ph",
+        "physics.atm-clus",
+        "physics.bio-ph",
+        "physics.chem-ph",
+        "physics.class-ph",
+        "physics.comp-ph",
+        "physics.data-an",
+        "physics.flu-dyn",
+        "physics.gen-ph",
+        "physics.geo-ph",
+        "physics.hist-ph",
+        "physics.ins-det",
+        "physics.med-ph",
+        "physics.optics",
+        "physics.ed-ph",
+        "physics.soc-ph",
+        "physics.plasm-ph",
+        "physics.pop-ph",
+        "physics.space-ph",
+    ],
+    "math-ph": [],
+    "math": [
+        "math.AG",
+        "math.AT",
+        "math.AP",
+        "math.CT",
+        "math.CA",
+        "math.CO",
+        "math.AC",
+        "math.CV",
+        "math.DG",
+        "math.DS",
+        "math.FA",
+        "math.GM",
+        "math.GN",
+        "math.GT",
+        "math.GR",
+        "math.HO",
+        "math.IT",
+        "math.KT",
+        "math.LO",
+        "math.MP",
+        "math.MG",
+        "math.NT",
+        "math.NA",
+        "math.OA",
+        "math.OC",
+        "math.PR",
+        "math.QA",
+        "math.RT",
+        "math.RA",
+        "math.SP",
+        "math.ST",
+        "math.SG",
+    ],
+    "q-bio": [
+        "q-bio.BM",
+        "q-bio.CB",
+        "q-bio.GN",
+        "q-bio.MN",
+        "q-bio.NC",
+        "q-bio.OT",
+        "q-bio.PE",
+        "q-bio.QM",
+        "q-bio.SC",
+        "q-bio.TO",
+    ],
+    "nucl-th": [],
+    "stat": ["stat.AP", "stat.CO", "stat.ML", "stat.ME", "stat.OT", "stat.TH"],
+    "hep-lat": [],
+    "astro-ph": [
+        "astro-ph.GA",
+        "astro-ph.CO",
+        "astro-ph.EP",
+        "astro-ph.HE",
+        "astro-ph.IM",
+        "astro-ph.SR",
+    ],
+}
+
+```
+
+##### File: `arxivscraper-main/arxivscraper/util.py`
+
+```python
+# %%
+
+import time
+import urllib.request
+import xml.etree.ElementTree as ET
+from urllib.error import HTTPError, URLError
+
+
+def get_oai_url(verb):
+    """
+    Returns the base URL for the OAI-PMH API
+
+    Parameters
+    ---------
+    verb: str
+        The OAI-PMH verb to use
+
+    Returns
+    -------
+    str
+        The base URL for the OAI-PMH API
+
+    """
+    return "http://export.arxiv.org/oai2?verb={verb}&".format(verb=verb)
+
+
+def get_arxiv_sets():
+    """
+    Retrieves the sets from the arXiv OAI-PMH endpoint using urllib.
+
+    Parameters:
+    -----------
+
+
+    Returns:
+    --------
+    sets: list of dict or None
+        A list of dictionaries, where each dictionary represents a set
+        and contains keys like 'setSpec' and 'setName', or None if an error occurs.
+    """
+
+    # Construct the URL
+    url = get_oai_url("ListSets")
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            # Check for HTTP errors
+            if response.getcode() != 200:
+                print(f"HTTP Error: {response.getcode()} - {response.reason}")
+                return None
+
+            # Read the response content
+            response_content = response.read()
+
+        # Parse the XML response
+        root = ET.fromstring(response_content)
+
+        sets = []
+        for set_element in root.findall(".//{http://www.openarchives.org/OAI/2.0/}set"):
+            set_data = {}
+            for child in set_element:
+                # Extract the tag name without the namespace
+                tag = child.tag.split("}")[-1]
+                set_data[tag] = child.text
+            sets.append(set_data)
+
+        return sets
+
+    except URLError as e:
+        print(f"Error during URL retrieval: {e}")
+        return None
+    except HTTPError as e:
+        print(f"HTTP Error: {e.code} - {e.reason}")
+        return None
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+
+
+def create_arxiv_category_markdown_table():
+    """
+    Generates a markdown table from a list of dictionaries.
+
+    Parameters:
+    -----------
+
+    Returns:
+    --------
+    str
+        A string containing the markdown table.
+    """
+
+    data = get_arxiv_sets()
+
+    # Initialize the table header
+    table = "| Code | Category |\n"
+    table += "|------|----------|\n"
+
+    # Add rows for each item in the data
+    for item in data:
+        code = item.get("setSpec", "")  # Handle potential missing keys
+        category = item.get("setName", "")
+        table += f"| `{code}` | {category} |\n"
+
+    return table
+
+
+# %%
+
+```
+
+#### Directory: `arxivscraper-main/scripts`
+
+##### File: `arxivscraper-main/scripts/arxiv_categories_v1.py`
+
+```python
+# Make a markdown table from categories and subcategories of Arxiv.org
+# originally posted as a gist
+# https://gist.github.com/Mahdisadjadi/96970b043fcd94b8e5109fe8a7dbbd5e
+
+from bs4 import BeautifulSoup
+import requests
+# url to scrape
+cat_url = 'https://arxiv.org/'
+subcat_url = 'https://arxiv.org/archive/'
+
+def return_soup(url):
+    url = requests.get(url).content
+    soup = BeautifulSoup(url,"html.parser")
+    return soup
+    
+def get_namespace(x):
+    name = x.find('a').text
+    tag = x.find('b').text
+    return name, tag
+
+def convert_to_markdown(*args):
+    print (('|'+a for a in args))
+
+    
+main_page = return_soup(cat_url).find_all('li')    
+    
+print ('| Category | Code |  Subcategories | Subcode |\n| --- | --- | --- | --- |')
+for x in main_page[0:]:
+    try:
+        xname,xtag = get_namespace(x)
+        string = '| ' + xname + ' | `' + xtag + '` | '
+        print (string)
+        subcat_page = return_soup(subcat_url + xtag).find_all('ul')[-1].find_all('b')
+        for y in subcat_page:
+            subs = y.text.split(' - ')
+            print ('| | | '+ subs[1] + ' | `' +  subs[0] + '`')
+    except:
+        pass
+```
+
+#### Directory: `arxivscraper-main/tests`
+
+##### File: `arxivscraper-main/tests/test_simple.py`
+
+```python
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import arxivscraper
+
+
+def test_main():
+    """Test main function. The output should 97 entries."""
+    scraper = arxivscraper.Scraper(
+        category="physics:cond-mat", date_from="2017-05-27", date_until="2017-05-30"
+    )
+
+    output = scraper.scrape()
+    assert len(output) == 97, "Result is not 97!"
+    assert type(output) == list, "Result is not a list!"
+
+```
+
+## Documentation
+
+No additional documentation found.
+
+
+
+---
+
+*Documentation generated by LlamaPackageService for Mahdisadjadi/arxivscraper (github)*
