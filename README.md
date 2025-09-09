@@ -94,7 +94,7 @@ scipaper parse "Check out this paper: doi:10.1000/example"
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Docker and Docker Compose (for containerized deployment)
 - OpenAI API key (optional, for AI features)
 - Ollama (optional, for local AI processing)

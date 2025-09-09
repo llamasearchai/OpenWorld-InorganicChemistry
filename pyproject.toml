@@ -2,7 +2,7 @@
 name = "scipaper"
 version = "1.0.1"
 description = "Modular, OA-first scientific paper tool (FastAPI + CLI + optional Agent)."
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 authors = [{ name = "Nik Jois", email = "nikjois@llamasearch.ai" }]
 license = "MIT"
