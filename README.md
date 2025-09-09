@@ -1,4 +1,14 @@
+<p align="center">
+  <img src="OpenPapers.png" alt="OpenPapers logo" width="160" />
+</p>
+
 # SciPaper
+
+## About
+
+OpenPapers is a Python toolkit that provides a full-featured CLI and FastAPI service for discovering, parsing, and analyzing scientific papers across multiple sources. It includes optional AI agent capabilities (OpenAI or Ollama) for advanced analysis. This repository hosts the complete, production-ready codebase (no stubs or placeholders) and is published at:
+
+https://github.com/llamasearchai/OpenPapers
 
 A comprehensive scientific paper management and analysis tool with AI-powered insights and multi-source data integration.
 
@@ -94,8 +104,8 @@ scipaper parse "Check out this paper: doi:10.1000/example"
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd OpenPaper
+git clone https://github.com/llamasearchai/OpenPapers.git
+cd OpenPapers
 ```
 
 2. Create and activate a virtual environment:
@@ -126,11 +136,11 @@ docker compose up --build
 
 ## Configuration
 
-Create a `.env` file with the following variables:
+Create a `.env` file with the following variables (leave blank if not used; set required keys before enabling features):
 
 ```env
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+# OpenAI Configuration (set to enable OpenAI features)
+OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_TEMPERATURE=0.2
 
@@ -144,8 +154,8 @@ FASTAPI_HOST=0.0.0.0
 FASTAPI_PORT=8000
 FASTAPI_DEBUG=false
 
-# External API Keys
-SEMANTICSCHOLAR_API_KEY=your_semanticscholar_key_here
+# External API Keys (set to enable corresponding features)
+SEMANTICSCHOLAR_API_KEY=
 
 # File Paths
 DOWNLOADS_DIR=./downloads
